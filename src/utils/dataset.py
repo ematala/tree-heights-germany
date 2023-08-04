@@ -18,7 +18,7 @@ class ForestDataset(Dataset):
     def __init__(
         self,
         img_dir: str,
-        labels_dir: str,
+        patch_dir: str,
         patches: DataFrame,
         patch_size: int = 64,
         image_size: int = 4096,
@@ -27,14 +27,14 @@ class ForestDataset(Dataset):
         Args:
 
         img_dir (str): Directory with all the images.
-        labels_dir (str): Directory with all the labels.
+        patch_dir (str): Directory with all the patches.
         patch_size (int): The size of the patches to be extracted from the images.
         image_size (int): The size of the images.
         patches (DataFrame): A DataFrame containing the patches to be loaded.
         """
 
         self.img_dir = img_dir
-        self.labels_dir = labels_dir
+        self.patch_dir = patch_dir
         self.patch_size = patch_size
         self.image_size = image_size
         self.patches = patches
@@ -70,7 +70,7 @@ class ForestDataset(Dataset):
         image, patch = self.patches.index[idx]
 
         # Open the HDF5 file for the patch
-        with HDF5File(os.path.join(self.labels_dir, f"{image}/{patch}.h5")) as hf:
+        with HDF5File(os.path.join(self.patch_dir, f"{image}/{patch}.h5")) as hf:
             img = hf["image"][:]
             label = hf["label"][:]
 

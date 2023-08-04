@@ -17,16 +17,16 @@ from tqdm import tqdm
 class Preprocessor:
     def __init__(
         self,
-        patch_info_file: str,
+        patches_file: str,
         img_dir: str,
-        labels_dir: str,
+        patch_dir: str,
         gedi_file: str,
         patch_size=64,
         image_size=4096,
     ):
-        self.patch_info_file = patch_info_file
+        self.patches_file = patches_file
         self.img_dir = img_dir
-        self.labels_dir = labels_dir
+        self.patch_dir = patch_dir
         self.gedi_file = gedi_file
         self.patch_size = patch_size
         self.image_size = image_size
@@ -35,7 +35,7 @@ class Preprocessor:
         self.images = []
         self.gedi = None
 
-        self.patch_info = DataFrame(
+        self.patches = DataFrame(
             index=MultiIndex.from_product([[], []], names=["image", "patch"]),
             columns=[
                 "n_labels",
@@ -48,10 +48,8 @@ class Preprocessor:
         if not os.path.exists(self.img_dir):
             raise FileNotFoundError(f"Image directory {self.img_dir} does not exist.")
 
-        if not os.path.exists(self.labels_dir):
-            raise FileNotFoundError(
-                f"Labels directory {self.labels_dir} does not exist."
-            )
+        if not os.path.exists(self.patch_dir):
+            raise FileNotFoundError(f"Patch directory {self.patch_dir} does not exist.")
 
         if not os.path.exists(self.gedi_file):
             raise FileNotFoundError(f"GEDI file {self.gedi_file} does not exist.")
@@ -125,7 +123,7 @@ class Preprocessor:
                 # Read the entire image into memory
                 img = src.read([3, 2, 1, 4])
 
-                subdir = os.path.join(self.labels_dir, image)
+                subdir = os.path.join(self.patch_dir, image)
                 os.makedirs(subdir)
 
                 for patch in range(self.n_patches):
@@ -145,14 +143,14 @@ class Preprocessor:
                             hf.create_dataset("image", data=data)
                             hf.create_dataset("label", data=label)
 
-                        self.patch_info.loc[(image, patch), :] = [
+                        self.patches.loc[(image, patch), :] = [
                             np.sum(label != 0),
                         ]
 
         gc.collect()
 
-    def _save_patch_info(self):
-        self.patch_info.reset_index().to_feather(self.patch_info_file)
+    def _save_patches(self):
+        self.patches.reset_index().to_feather(self.patches_file)
 
     def run(self):
         logging.info("Starting preprocessing...")
@@ -160,15 +158,28 @@ class Preprocessor:
         logging.info("Directories validated.")
         self._load_images()
         logging.info("Images loaded.")
-        if os.path.exists(self.patch_info_file):
-            self.patch_info = read_feather(self.patch_info_file).set_index(
-                ["image", "patch"]
-            )
+        logging.info(f"Number of images: {len(preprocessor.images)}")
+        if os.path.exists(self.patches_file):
+            self.patches = read_feather(self.patches_file).set_index(["image", "patch"])
             logging.info("Loaded existing patch info file. Skipping image processing.")
             return
         self._load_gedi()
         logging.info("GEDI data loaded.")
         self._process_images()
         logging.info("Images processed.")
-        self._save_patch_info()
+        logging.info(f"Number of patches: {preprocessor.patches.shape[0]}")
+        logging.info(f"Number of labels: {preprocessor.patches.n_labels.sum()}")
+        self._save_patches()
         logging.info("Patch info saved.")
+        logging.info("Done.")
+
+
+if __name__ == "__main__":
+    preprocessor = Preprocessor(
+        img_dir="data/images",
+        patch_dir="data/patches",
+        patches_file="data/info/patches.fth",
+        gedi_file="data/gedi/gedi_complete.fth",
+    )
+
+    preprocessor.run()
