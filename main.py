@@ -30,35 +30,43 @@ device = Device("cuda" if cuda_available() else "mps" if mps_available() else "c
 
 print(f"Using {device} device")
 
-
+# Create preprocessor
 preprocessor = Preprocessor(patches_file, img_dir, patch_dir, gedi_file)
 
 preprocessor.run()
 
-patches = preprocessor.patches
+# Extract patches
+patches = preprocessor.patches.sample(frac=0.5, random_state=seed)
 
 print(f"Total number of patches: {len(patches)}")
 
+# Split patches
 train, rest = split(patches, test_size=0.3, random_state=seed)
 val, test = split(rest, test_size=0.5, random_state=seed)
 
+# Create datasets
 train_data = ForestDataset(train)
 val_data = ForestDataset(val)
 test_data = ForestDataset(test)
 
+# Create dataloaders
 train_loader = DataLoader(train_data, batch_size, True, num_workers=num_workers)
 val_loader = DataLoader(val_data, batch_size, False, num_workers=num_workers)
 test_loader = DataLoader(val_data, batch_size, False, num_workers=num_workers)
 
+# Create model
 model = UNet().to(device)
 
+# Create optimizer
 optimizer = Adam(model.parameters(), learning_rate)
 
+# Create writer
 writer = SummaryWriter(log_dir)
 
+# Training loop
 for epoch in range(epochs):
-    training(train_loader, model, loss, writer, device, epoch, optimizer)
-    evaluation(val_loader, model, loss, writer, device, epoch)
+    training(train_loader, model, loss, device, writer, epoch, optimizer)
+    evaluation(val_loader, model, loss, device, writer, epoch)
 
 writer.close()
 
@@ -68,4 +76,5 @@ score = evaluation(test_loader, model, loss, device)
 
 print(f"Final loss on test set: {score}")
 
+# Export model
 save(model.state_dict(), os.path.join(model_dir, "unet.pt"))

@@ -58,6 +58,6 @@ class ForestDataset(Dataset):
 
         # Return the image patch and label patch as PyTorch tensors
         return (
-            from_numpy(img.astype(float32)).float(),
-            from_numpy(label.astype(float32)).float(),
+            from_numpy(img.astype(float32)),
+            from_numpy(label.astype(float32)),
         )

@@ -2,7 +2,6 @@ import gc
 import logging
 import os
 import re
-from typing import Tuple
 
 from geopandas import GeoDataFrame, points_from_xy
 from h5py import File as HDF5File
@@ -14,6 +13,8 @@ from rasterio import open as ropen
 from rasterio.features import rasterize
 from shapely.geometry import box
 from tqdm import tqdm
+
+from src.utils.misc import get_window_bounds
 
 
 class Preprocessor:
@@ -96,12 +97,6 @@ class Preprocessor:
             .to_crs("EPSG:3857")
         )
 
-    def _get_window_bounds(self, idx: int) -> Tuple[int, int]:
-        row = (idx // (self.image_size // self.patch_size)) * self.patch_size
-        col = (idx % (self.image_size // self.patch_size)) * self.patch_size
-
-        return row, col
-
     def _process_images(self):
         for image in tqdm(self.images):
             with ropen(os.path.join(self.img_dir, f"{image}.tif")) as src:
@@ -129,7 +124,7 @@ class Preprocessor:
                 os.makedirs(subdir)
 
                 for patch in range(self.n_patches):
-                    row, col = self._get_window_bounds(patch)
+                    row, col = get_window_bounds(patch)
 
                     size = self.patch_size
 
