@@ -1,9 +1,10 @@
 import os
 
 from sklearn.model_selection import train_test_split as split
-from torch import cuda, save
 from torch import device as Device
-from torch.backends import mps
+from torch import save
+from torch.backends.mps import is_available as mps_available
+from torch.cuda import is_available as cuda_available
 from torch.optim import Adam
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
@@ -25,9 +26,7 @@ batch_size = 64
 num_workers = 6
 learning_rate = 1e-4
 epochs = 2
-device = Device(
-    "cuda" if cuda.is_available() else "mps" if mps.is_available() else "cpu"
-)
+device = Device("cuda" if cuda_available() else "mps" if mps_available() else "cpu")
 print(f"Using {device} device")
 
 

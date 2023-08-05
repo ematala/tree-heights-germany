@@ -4,9 +4,11 @@ import os
 import re
 from typing import Tuple
 
-import numpy as np
 from geopandas import GeoDataFrame, points_from_xy
 from h5py import File as HDF5File
+from numpy import any as npany
+from numpy import float32
+from numpy import sum as npsum
 from pandas import DataFrame, MultiIndex, read_feather
 from rasterio import open as ropen
 from rasterio.features import rasterize
@@ -114,7 +116,7 @@ class Preprocessor:
                         transform=src.transform,
                         fill=0,
                         all_touched=True,
-                        dtype=np.float32,
+                        dtype=float32,
                     )
                 except ValueError as e:
                     logging.error(f"Error rasterizing image {image}: {str(e)}")
@@ -134,7 +136,7 @@ class Preprocessor:
                     data = img[:, row : row + size, col : col + size]
                     label = mask[row : row + size, col : col + size]
 
-                    if np.any(label):
+                    if npany(label):
                         # Save the image patch and label patch in a HDF5 file
                         with HDF5File(
                             f"{subdir}/{patch}.h5",
@@ -144,7 +146,7 @@ class Preprocessor:
                             hf.create_dataset("label", data=label)
 
                         self.patches.loc[(image, patch), :] = [
-                            np.sum(label != 0),
+                            npsum(label != 0),
                         ]
 
         gc.collect()

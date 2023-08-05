@@ -1,58 +1,22 @@
-import os
-import matplotlib.pyplot as plt
-import numpy as np
-from rasterio import open as ropen
+from matplotlib.pyplot import show, subplots
+from numpy import ndarray
 
 
-def plot_sample(image: str, outputs: np.ndarray) -> None:
-    # Create numpy arrays from tensors
-    image = image.numpy()
-    outputs = outputs.detach().numpy()
+def plot_image_and_prediction(image: ndarray, prediction: ndarray):
+    # Transpose the image and prediction to have the channels last
+    image = image[:3, :, :].transpose(1, 2, 0)
 
-    # Normalize RGB values
-    image = image / image.max()
+    # Create a subplot to display the image and prediction side by side
+    _, (ax1, ax2) = subplots(1, 2, figsize=(12, 6))
 
-    # Swap red and blue bands
-    image[[0, 2]] = image[[2, 0]]
+    # Plot the original image
+    ax1.imshow(image)
+    ax1.set_title("Original Image")
+    ax1.axis("off")
 
-    # Remove NIR band
-    image = image[:3]
+    # Plot the prediction
+    ax2.imshow(prediction.squeeze(), cmap="viridis")
+    ax2.set_title("Predicted Height Map")
+    ax2.axis("off")
 
-    # Transform from (C, H, W) to (H, W, C)
-    image = np.transpose(image, (1, 2, 0))
-
-    # Create figure
-    fig, axs = plt.subplots(1, 2, figsize=(12, 4))
-
-    # Show image
-    axs[0].imshow(image)
-    axs[0].set_title(image)
-    axs[0].axis("off")
-
-    # Show model outputs
-    axs[1].imshow(outputs.squeeze(), cmap="viridis")
-    axs[1].set_title("Predicted labels")
-    axs[1].axis("off")
-
-    # Show figure
-    plt.show()
-
-
-def plot_image(image: str) -> None:
-    with ropen(os.path.join(image)) as src:
-        img = src.read([3, 2, 1])
-
-    img = img / img.max()
-    img = np.transpose(img, (1, 2, 0))
-
-    plt.imshow(img)
-    plt.axis("off")
-    plt.title(image)
-    plt.show()
-
-
-def plot_prediction(prediction: np.ndarray) -> None:
-    plt.imshow(prediction.squeeze(), cmap="viridis")
-    plt.axis("off")
-    plt.title("Predicted labels")
-    plt.show()
+    show()

@@ -1,8 +1,8 @@
 import os
 from typing import Tuple
 
-import numpy as np
 from h5py import File as HDF5File
+from numpy import float32
 from pandas import DataFrame
 from torch import Tensor, from_numpy
 from torch.utils.data import Dataset
@@ -54,11 +54,10 @@ class ForestDataset(Dataset):
             label = hf["label"][:]
 
         # Normalize the image patch
-        # img = (img - img.min()) / (img.max() - img.min())
-        # img = img.transpose((1, 2, 0))
+        img = (img - img.min()) / (img.max() - img.min())
 
         # Return the image patch and label patch as PyTorch tensors
         return (
-            from_numpy(img.astype(np.float32)).float(),
-            from_numpy(label.astype(np.float32)).float(),
+            from_numpy(img.astype(float32)).float(),
+            from_numpy(label.astype(float32)).float(),
         )
