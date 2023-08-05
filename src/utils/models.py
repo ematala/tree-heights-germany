@@ -9,19 +9,19 @@ from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
 
-def train_loop(
+def training(
     dataloader: DataLoader,
     model: Module,
     fn: Callable,
-    writer: SummaryWriter,
     device: Device,
+    writer: SummaryWriter,
     epoch: int,
     optimizer: Optimizer,
-):
+) -> None:
     model.train()
-    for batch, (inputs, targets) in enumerate(
-        tqdm(dataloader, desc=f"Training Epoch {epoch+1}")
-    ):
+    desc = f"Training Epoch {epoch+1}"
+
+    for batch, (inputs, targets) in enumerate(tqdm(dataloader, desc)):
         inputs, targets = inputs.to(device), targets.to(device)
         outputs = model(inputs)
         loss = fn(outputs, targets)
@@ -33,23 +33,27 @@ def train_loop(
         writer.add_scalar("loss/train", loss.item(), epoch * len(dataloader) + batch)
 
 
-def validation_loop(
+def evaluation(
     dataloader: DataLoader,
     model: Module,
     fn: Callable,
-    writer: SummaryWriter,
     device: Device,
-    epoch: int,
-):
+    writer: SummaryWriter | None = None,
+    epoch: int | None = None,
+) -> float:
     model.eval()
-    n_batches = len(dataloader)
     loss = 0
+    desc = f"Validation Epoch {epoch+1}" if writer is not None else "Evaluation"
 
     with no_grad():
-        for inputs, targets in tqdm(dataloader, desc=f"Validation Epoch {epoch+1}"):
+        for inputs, targets in tqdm(dataloader, desc):
             inputs, targets = inputs.to(device), targets.to(device)
             outputs = model(inputs)
             loss += fn(outputs, targets).item()
 
-    loss /= n_batches
-    writer.add_scalar("loss/validation", loss, epoch)
+    loss /= len(dataloader)
+
+    if writer is not None:
+        writer.add_scalar("loss/validation", loss, epoch)
+
+    return loss

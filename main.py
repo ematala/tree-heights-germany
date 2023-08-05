@@ -12,7 +12,7 @@ from torch.utils.tensorboard import SummaryWriter
 from src.models.unet import UNet
 from src.utils.dataset import ForestDataset
 from src.utils.loss import loss
-from src.utils.models import train_loop, validation_loop
+from src.utils.models import evaluation, training
 from src.utils.preprocessing import Preprocessor
 
 img_dir = "data/images"
@@ -27,6 +27,7 @@ num_workers = 6
 learning_rate = 1e-4
 epochs = 2
 device = Device("cuda" if cuda_available() else "mps" if mps_available() else "cpu")
+
 print(f"Using {device} device")
 
 
@@ -56,11 +57,15 @@ optimizer = Adam(model.parameters(), learning_rate)
 writer = SummaryWriter(log_dir)
 
 for epoch in range(epochs):
-    train_loop(train_loader, model, loss, writer, device, epoch, optimizer)
-    validation_loop(val_loader, model, loss, writer, device, epoch)
+    training(train_loader, model, loss, writer, device, epoch, optimizer)
+    evaluation(val_loader, model, loss, writer, device, epoch)
 
 writer.close()
 
 print("Training complete.")
+
+score = evaluation(test_loader, model, loss, device)
+
+print(f"Final loss on test set: {score}")
 
 save(model.state_dict(), os.path.join(model_dir, "unet.pt"))
