@@ -17,10 +17,10 @@ from tqdm import tqdm
 class Preprocessor:
     def __init__(
         self,
-        patches_file: str,
-        img_dir: str,
-        patch_dir: str,
-        gedi_file: str,
+        patches_file: str = "data/info/patches.fth",
+        img_dir: str = "data/images",
+        patch_dir: str = "data/patches",
+        gedi_file: str = "data/gedi/gedi_complete.fth",
         patch_size=64,
         image_size=4096,
     ):
@@ -158,7 +158,7 @@ class Preprocessor:
         logging.info("Directories validated.")
         self._load_images()
         logging.info("Images loaded.")
-        logging.info(f"Number of images: {len(preprocessor.images)}")
+        logging.info(f"Number of images: {len(self.images)}")
         if os.path.exists(self.patches_file):
             self.patches = read_feather(self.patches_file).set_index(["image", "patch"])
             logging.info("Loaded existing patch info file. Skipping image processing.")
@@ -167,8 +167,8 @@ class Preprocessor:
         logging.info("GEDI data loaded.")
         self._process_images()
         logging.info("Images processed.")
-        logging.info(f"Number of patches: {preprocessor.patches.shape[0]}")
-        logging.info(f"Number of labels: {preprocessor.patches.n_labels.sum()}")
+        logging.info(f"Number of patches: {self.patches.shape[0]}")
+        logging.info(f"Number of labels: {self.patches.n_labels.sum()}")
         self._save_patches()
         logging.info("Patch info saved.")
         logging.info("Done.")

@@ -17,39 +17,18 @@ class ForestDataset(Dataset):
 
     def __init__(
         self,
-        img_dir: str,
-        patch_dir: str,
         patches: DataFrame,
-        patch_size: int = 64,
-        image_size: int = 4096,
+        patch_dir: str = "data/patches",
     ):
         """
         Args:
 
-        img_dir (str): Directory with all the images.
-        patch_dir (str): Directory with all the patches.
-        patch_size (int): The size of the patches to be extracted from the images.
-        image_size (int): The size of the images.
         patches (DataFrame): A DataFrame containing the patches to be loaded.
+        patch_dir (str): Directory with all the patches.
         """
 
-        self.img_dir = img_dir
         self.patch_dir = patch_dir
-        self.patch_size = patch_size
-        self.image_size = image_size
         self.patches = patches
-
-    def getrowcol(self, idx: int) -> Tuple[int, int]:
-        """
-        This function returns the row and column of a patch given its id.
-        Args:
-
-        idx (int): The id of the patch.
-        """
-        row = (idx // (self.image_size // self.patch_size)) * self.patch_size
-        col = (idx % (self.image_size // self.patch_size)) * self.patch_size
-
-        return row, col
 
     def __len__(self) -> int:
         """
