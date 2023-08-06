@@ -1,7 +1,9 @@
 from typing import Callable
 
 from torch import device as Device
+from torch import load as tload
 from torch import no_grad
+from torch import save as tsave
 from torch.nn import Module
 from torch.optim import Optimizer
 from torch.utils.data import DataLoader
@@ -57,3 +59,14 @@ def evaluation(
         writer.add_scalar("loss/validation", loss, epoch)
 
     return loss
+
+
+def load(model: Module, path: str):
+    model.load_state_dict(tload(path))
+    model.eval()
+
+    return model
+
+
+def save(model: Module, path: str):
+    tsave(model.state_dict(), path)
