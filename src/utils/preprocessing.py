@@ -20,7 +20,7 @@ from src.utils.misc import get_window_bounds
 class Preprocessor:
     def __init__(
         self,
-        patches_file: str = "data/info/patches.fth",
+        patches_file: str = "data/patches/info.fth",
         img_dir: str = "data/images",
         patch_dir: str = "data/patches",
         gedi_file: str = "data/gedi/gedi_complete.fth",
@@ -124,12 +124,11 @@ class Preprocessor:
                 os.makedirs(subdir)
 
                 for patch in range(self.n_patches):
-                    row, col = get_window_bounds(patch)
+                    bounds = get_window_bounds(patch, self.patch_size)
+                    row_start, row_end, col_start, col_end = bounds
 
-                    size = self.patch_size
-
-                    data = img[:, row : row + size, col : col + size]
-                    label = mask[row : row + size, col : col + size]
+                    data = img[:, row_start:row_end, col_start:col_end]
+                    label = mask[row_start:row_end, col_start:col_end]
 
                     if npany(label):
                         # Save the image patch and label patch in a HDF5 file

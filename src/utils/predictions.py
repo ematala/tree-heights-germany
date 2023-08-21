@@ -50,11 +50,12 @@ def predict_image(
     # Iterate through the patches
     for patch in range(n_patches):
         # Get the window bounds for the patch
-        row, col = get_window_bounds(patch)
+        bounds = get_window_bounds(patch, size)
+        row_start, row_end, col_start, col_end = bounds
 
         # Extract the patch
         patch = (
-            from_numpy(image[:, row : row + size, col : col + size].astype(float32)),
+            from_numpy(image[:, row_start:row_end, col_start:col_end].astype(float32)),
             None,
         )
 
@@ -62,6 +63,6 @@ def predict_image(
         _, prediction = predict_patch(model, patch, device)
 
         # Place the patch prediction into the prediction image
-        outputs[:, row : row + size, col : col + size] = prediction
+        outputs[:, row_start:row_end, col_start:col_end] = prediction
 
     return image, outputs.squeeze()
