@@ -39,9 +39,9 @@ class UpConvBlock(nn.Module):
 # Define the U-Net Model
 
 
-class UNet(nn.Module):
+class Unet(nn.Module):
     def __init__(self):
-        super(UNet, self).__init__()
+        super(Unet, self).__init__()
 
         self.down_conv1 = ConvBlock(4, 64)
         self.down_conv2 = ConvBlock(64, 128)
