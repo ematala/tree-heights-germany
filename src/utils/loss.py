@@ -1,24 +1,37 @@
+from typing import List, Tuple
+
 from torch import Tensor, abs
 
 
-def loss(outputs: Tensor, targets: Tensor, no_data: float = 0) -> Tensor:
-    """Computes the mean absolute error between the predicted and target values.
+def filter(
+    outputs: Tensor, targets: Tensor, no_data: float = 0
+) -> Tuple[Tensor, Tensor]:
+    outputs, targets = outputs.flatten(), targets.flatten()
 
-    Args:
-        outputs (Tensor): The predicted values.
-        targets (Tensor): The target values.
-        no_data (float, optional): Specifies the no data value. Defaults to -np.inf.
-
-    Returns:
-        Tensor: The mean absolute error.
-    """
-
-    # Flatten arrays
-    outputs = outputs.flatten()
-    targets = targets.flatten()
-
-    # Remove no data values
     outputs = outputs[targets != no_data]
     targets = targets[targets != no_data]
 
+    return outputs, targets
+
+
+def loss(
+    outputs: Tensor,
+    targets: Tensor,
+) -> Tensor:
+    outputs, targets = filter(outputs, targets)
+
     return abs(targets - outputs).mean()
+
+
+def range_loss(outputs: Tensor, targets: Tensor, lower: int, upper: int) -> float:
+    outputs, targets = filter(outputs, targets)
+
+    idx = (targets >= lower) & (targets < upper)
+
+    return abs(targets[idx] - outputs[idx]).mean().item()
+
+
+def range_losses(
+    outputs: Tensor, targets: Tensor, ranges: List[Tuple[int, int]]
+) -> List[float]:
+    return [range_loss(outputs, targets, lower, upper) for lower, upper in ranges]

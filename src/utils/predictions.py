@@ -33,7 +33,7 @@ def predict_patch(
 
 
 def predict_image(
-    model: Module, device: Device, img: str, patch_size: int = 64
+    model: Module, device: Device, img: str, patch_size: int
 ) -> Tuple[ndarray, ndarray]:
     with ropen(os.path.join(img)) as src:
         image = src.read([3, 2, 1, 4])
@@ -44,13 +44,12 @@ def predict_image(
     outputs = zeros((1, height, width))
 
     # Calculate the number of patches
-    size = patch_size
-    n_patches = (height // size) * (width // size)
+    n_patches = (height // patch_size) ** 2
 
     # Iterate through the patches
     for patch in range(n_patches):
         # Get the window bounds for the patch
-        bounds = get_window_bounds(patch, size)
+        bounds = get_window_bounds(patch, patch_size)
         row_start, row_end, col_start, col_end = bounds
 
         # Extract the patch
