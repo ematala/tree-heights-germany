@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import Tuple
 
 from torch import Tensor, abs
 
@@ -23,15 +23,9 @@ def loss(
     return abs(targets - outputs).mean()
 
 
-def range_loss(outputs: Tensor, targets: Tensor, lower: int, upper: int) -> float:
+def range_loss(outputs: Tensor, targets: Tensor, lower: int, upper: int) -> Tensor:
     outputs, targets = filter(outputs, targets)
 
     idx = (targets >= lower) & (targets < upper)
 
-    return abs(targets[idx] - outputs[idx]).mean().item()
-
-
-def range_losses(
-    outputs: Tensor, targets: Tensor, ranges: List[Tuple[int, int]]
-) -> List[float]:
-    return [range_loss(outputs, targets, lower, upper) for lower, upper in ranges]
+    return abs(targets[idx] - outputs[idx]).mean()

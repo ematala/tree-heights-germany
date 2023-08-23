@@ -7,6 +7,8 @@ from pandas import DataFrame
 from torch import Tensor, from_numpy
 from torch.utils.data import Dataset
 
+from src.utils.misc import normalize_image
+
 
 class ForestDataset(Dataset):
 
@@ -54,7 +56,7 @@ class ForestDataset(Dataset):
             label = hf["label"][:]
 
         # Normalize the image patch
-        img = (img - img.min()) / (img.max() - img.min())
+        img = normalize_image(img)
 
         # Return the image patch and label patch as PyTorch tensors
         return (
