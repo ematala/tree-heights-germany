@@ -43,6 +43,8 @@ class Unet(nn.Module):
     def __init__(self):
         super(Unet, self).__init__()
 
+        self.name = "u-custom"
+
         self.down_conv1 = ConvBlock(4, 64)
         self.down_conv2 = ConvBlock(64, 128)
         self.down_conv3 = ConvBlock(128, 256)
