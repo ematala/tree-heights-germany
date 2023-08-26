@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Callable, Optional
 
 from torch import Tensor, no_grad
 from torch import device as Device
@@ -41,8 +41,8 @@ def evaluation(
     model: Module,
     fn: Callable[[Tensor, Tensor], Tensor],
     device: Device,
-    writer: SummaryWriter | None = None,
-    epoch: int | None = None,
+    writer: Optional[SummaryWriter] = None,
+    epoch: Optional[int] = None,
 ) -> float:
     model.eval()
 
@@ -57,7 +57,7 @@ def evaluation(
 
     loss /= len(dataloader)
 
-    if writer is not None:
+    if writer:
         writer.add_scalar("validation/loss", loss, epoch)
 
     return loss
