@@ -1,6 +1,7 @@
 from typing import Tuple
 
 from torch import Tensor, abs
+from torch.nn import HuberLoss
 
 
 def filter(
@@ -17,10 +18,13 @@ def filter(
 def loss(
     outputs: Tensor,
     targets: Tensor,
+    delta: float = 3,
 ) -> Tensor:
     outputs, targets = filter(outputs, targets)
 
-    return abs(targets - outputs).mean()
+    fn = HuberLoss("mean", delta)
+
+    return fn(outputs, targets)
 
 
 def range_loss(outputs: Tensor, targets: Tensor, lower: int, upper: int) -> Tensor:
