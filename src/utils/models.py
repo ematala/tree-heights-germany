@@ -63,8 +63,8 @@ def evaluation(
     return loss
 
 
-def load(model: Module, path: str) -> Module:
-    model.load_state_dict(tload(path))
+def load(model: Module, path: str, device: Device) -> Module:
+    model.load_state_dict(tload(path, map_location=device))
 
     model.eval()
 
