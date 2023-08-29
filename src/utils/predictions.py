@@ -2,6 +2,7 @@ import os
 from typing import Tuple
 
 from numpy import float32, ndarray, zeros
+from PIL.Image import fromarray
 from rasterio import open as ropen
 from torch import Tensor, from_numpy, no_grad
 from torch import device as Device
@@ -65,3 +66,7 @@ def predict_image(
         outputs[:, row_start:row_end, col_start:col_end] = prediction
 
     return image, outputs.squeeze()
+
+
+def save_prediction(prediction: ndarray, filename: str) -> None:
+    fromarray(prediction, mode="F").save(f"{filename}", "TIFF")
