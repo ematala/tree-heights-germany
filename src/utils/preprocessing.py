@@ -2,6 +2,7 @@ import gc
 import logging
 import os
 import re
+from typing import List
 
 from geopandas import GeoDataFrame, points_from_xy
 from h5py import File as HDF5File
@@ -14,18 +15,19 @@ from rasterio.features import rasterize
 from shapely.geometry import box
 from tqdm import tqdm
 
-from src.utils.misc import get_window_bounds
+from src.utils.misc import get_bins, get_window_bounds
 
 
 class Preprocessor:
     def __init__(
         self,
-        patches_file: str = "data/patches/info.fth",
+        patches_file: str = "data/patches/256/info.fth",
         img_dir: str = "data/images",
-        patch_dir: str = "data/patches",
+        patch_dir: str = "data/patches/256",
         gedi_file: str = "data/gedi/gedi_complete.fth",
-        patch_size=64,
+        patch_size=256,
         image_size=4096,
+        bins: List[int] = list(range(0, 55, 5)),
     ):
         self.patches_file = patches_file
         self.img_dir = img_dir
@@ -34,15 +36,16 @@ class Preprocessor:
         self.patch_size = patch_size
         self.image_size = image_size
         self.n_patches = (self.image_size // self.patch_size) ** 2
-
         self.images = []
         self.gedi = None
-
+        self.bins = bins
         self.patches = DataFrame(
             index=MultiIndex.from_product([[], []], names=["image", "patch"]),
             columns=[
-                "n_labels",
+                "labels",
+                "bins",
             ],
+            dtype="object",
         )
 
         logging.basicConfig(level=logging.INFO)
@@ -141,6 +144,7 @@ class Preprocessor:
 
                         self.patches.loc[(image, patch), :] = [
                             npsum(label != 0),
+                            get_bins(label, self.bins),
                         ]
 
         gc.collect()
@@ -171,11 +175,4 @@ class Preprocessor:
 
 
 if __name__ == "__main__":
-    preprocessor = Preprocessor(
-        img_dir="data/images",
-        patch_dir="data/patches",
-        patches_file="data/info/patches.fth",
-        gedi_file="data/gedi/gedi_complete.fth",
-    )
-
-    preprocessor.run()
+    Preprocessor().run()

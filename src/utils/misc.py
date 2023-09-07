@@ -1,5 +1,6 @@
-from typing import Tuple
+from typing import List, Tuple
 
+from numpy import histogram as nphist
 from numpy import ndarray
 
 
@@ -19,3 +20,8 @@ def get_window_bounds(
 
 def normalize_image(img: ndarray) -> ndarray:
     return (img - img.min()) / (img.max() - img.min())
+
+
+def get_bins(label: ndarray, bins: List[int]) -> ndarray:
+    count, _ = nphist(label, bins)
+    return count
