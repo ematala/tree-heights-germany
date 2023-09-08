@@ -15,7 +15,7 @@ from rasterio.features import rasterize
 from shapely.geometry import box
 from tqdm import tqdm
 
-from src.utils.misc import get_bins, get_window_bounds
+from src.utils.misc import get_label_bins, get_window_bounds
 
 
 class Preprocessor:
@@ -143,7 +143,7 @@ class Preprocessor:
                             hf.create_dataset("label", data=label)
 
                         self.patches.loc[(image, patch), "labels"] = npsum(label != 0)
-                        self.patches.loc[(image, patch), "bins"] = get_bins(label)
+                        self.patches.loc[(image, patch), "bins"] = get_label_bins(label)
 
         gc.collect()
 
@@ -157,12 +157,14 @@ class Preprocessor:
         self._load_images()
         logging.info("Images loaded.")
         logging.info(f"Number of images: {len(self.images)}")
+        self._load_gedi()
+        logging.info("GEDI data loaded.")
         if os.path.exists(self.patches_file):
             self.patches = read_feather(self.patches_file).set_index(["image", "patch"])
             logging.info("Loaded existing patch info file. Skipping image processing.")
+            logging.info(f"Number of patches: {self.patches.shape[0]}")
+            logging.info(f"Number of labels: {self.patches.labels.sum()}")
             return
-        self._load_gedi()
-        logging.info("GEDI data loaded.")
         self._process_images()
         logging.info("Images processed.")
         logging.info(f"Number of patches: {self.patches.shape[0]}")
