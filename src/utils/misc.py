@@ -1,7 +1,12 @@
+from random import seed as pyseed
 from typing import List, Tuple
 
 from numpy import histogram as nphist
 from numpy import ndarray
+from numpy.random import seed as npseed
+from torch import manual_seed as tseed
+from torch.cuda import manual_seed as cseed
+from torch.cuda import manual_seed_all as cseed_all
 
 
 def get_window_bounds(
@@ -27,3 +32,11 @@ def get_label_bins(
 ) -> ndarray:
     count, _ = nphist(label[label != no_data], bins)
     return count
+
+
+def seed(s: int = 42):
+    pyseed(s)
+    npseed(s)
+    tseed(s)
+    cseed(s)
+    cseed_all(s)
