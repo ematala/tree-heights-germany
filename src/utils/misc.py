@@ -22,6 +22,8 @@ def normalize_image(img: ndarray) -> ndarray:
     return (img - img.min()) / (img.max() - img.min())
 
 
-def get_bins(label: ndarray, bins: List[int]) -> ndarray:
-    count, _ = nphist(label, bins)
+def get_bins(
+    label: ndarray, bins: List[int] = list(range(0, 55, 5)), no_data: float = 0
+) -> ndarray:
+    count, _ = nphist(label[label != no_data], bins)
     return count
