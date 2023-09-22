@@ -1,28 +1,26 @@
 import torch
-from torch import nn
+from torch.nn import Conv2d, ConvTranspose2d, MaxPool2d, Module, ReLU, Sequential
 from torch.nn.functional import pad
 
 
-# Define the Convolution Block
-class ConvBlock(nn.Module):
+class ConvBlock(Module):
     def __init__(self, in_channels, out_channels):
         super(ConvBlock, self).__init__()
-        self.conv = nn.Sequential(
-            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
+        self.conv = Sequential(
+            Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
+            ReLU(inplace=True),
+            Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
+            ReLU(inplace=True),
         )
 
     def forward(self, x):
         return self.conv(x)
 
 
-# Define the Up-Convolution Block
-class UpConvBlock(nn.Module):
+class UpConvBlock(Module):
     def __init__(self, in_channels, out_channels):
         super(UpConvBlock, self).__init__()
-        self.up = nn.ConvTranspose2d(in_channels, out_channels, kernel_size=2, stride=2)
+        self.up = ConvTranspose2d(in_channels, out_channels, kernel_size=2, stride=2)
         self.conv = ConvBlock(2 * out_channels, out_channels)
 
     def forward(self, x1, x2):
@@ -36,10 +34,7 @@ class UpConvBlock(nn.Module):
         return self.conv(x)
 
 
-# Define the U-Net Model
-
-
-class Unet(nn.Module):
+class Unet(Module):
     def __init__(self):
         super(Unet, self).__init__()
 
@@ -56,9 +51,9 @@ class Unet(nn.Module):
         self.up_conv3 = UpConvBlock(256, 128)
         self.up_conv4 = UpConvBlock(128, 64)
 
-        self.max_pool = nn.MaxPool2d(kernel_size=2, stride=2)
+        self.max_pool = MaxPool2d(kernel_size=2, stride=2)
 
-        self.final_conv = nn.Conv2d(64, 1, kernel_size=1)
+        self.final_conv = Conv2d(64, 1, kernel_size=1)
 
     def forward(self, x):
         # Encoder
