@@ -14,7 +14,7 @@ from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data import DataLoader, WeightedRandomSampler
 from torch.utils.tensorboard import SummaryWriter
 
-from src.models.unet import Unet
+from src.models.vitnet import VitNet
 from src.utils.dataset import ForestDataset
 from src.utils.loss import loss
 from src.utils.misc import seed
@@ -34,7 +34,6 @@ batch_size = 12
 num_workers = 6
 learning_rate = 1e-2
 epochs = 5
-is_training = True
 bins = list(range(0, 55, 5))
 device = Device("cuda" if cuda_available() else "mps" if mps_available() else "cpu")
 
@@ -91,7 +90,7 @@ if __name__ == "__main__":
     testloader = DataLoader(testdata, batch_size, False, num_workers=num_workers)
 
     # Initialise model
-    model = Unet().to(device)
+    model = VitNet().to(device)
 
     model_file = os.path.join(model_dir, f"m-{model.name}-p{patch_size}-e{epochs}.pt")
 
