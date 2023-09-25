@@ -10,9 +10,8 @@ class SpatialConcatenation(Module):
         self.num_tokens, self.feature_dim = input_shape
         self.height, self.width = output_shape
 
-        assert (
-            self.num_tokens == self.width * self.height
-        ), "Input and output shapes are not compatible"
+        if not self.num_tokens == self.width * self.height:
+            raise ValueError("Input and output shapes are not compatible")
 
     def forward(self, x: Tensor) -> Tensor:
         # Permute from (batch, tokens, features) to (batch, features, tokens)

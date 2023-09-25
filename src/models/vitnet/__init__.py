@@ -20,6 +20,15 @@ class VitNet(Module):
     ):
         super(VitNet, self).__init__()
 
+        if not image_size % patch_size == 0:
+            raise ValueError("image_size must be divisible by patch_size")
+        if not hidden_size % num_attention_heads == 0:
+            raise ValueError("hidden_size must be divisible by num_attention_heads")
+        if not intermediate_size >= hidden_size:
+            raise ValueError(
+                "intermediate_size should be greater than or equal to hidden_size"
+            )
+
         self.name = f"vitnet-{hidden_size}"
 
         self.config = ViTConfig(
@@ -41,6 +50,9 @@ class VitNet(Module):
         )
 
         self.head = OutputHead(hidden_size)
+
+    def count_params(self):
+        return sum([p.numel() for p in self.parameters() if p.requires_grad])
 
     def forward(self, x: Tensor) -> Tensor:
         tb3, tb6, tb9, tb12 = self.encoder(x)
