@@ -58,9 +58,12 @@ class DecoderBlock(Module):
 
     def forward(self, x: Tensor, prev: Tensor = None) -> Tensor:
         x = self.reproject(x)
+
         x = self.decode(x)
+
         if prev is not None:
             x = self.combine_features(x, prev)
+
         return self.upscale(x)
 
 
