@@ -10,5 +10,6 @@ class OutputHead(Module):
 
     def forward(self, x: Tensor) -> Tensor:
         x = self.conv(x)
+        x = self.softplus(x)
 
-        return self.softplus(x)
+        return x

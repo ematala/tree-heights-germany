@@ -55,8 +55,10 @@ class VitNet(Module):
         return sum([p.numel() for p in self.parameters() if p.requires_grad])
 
     def forward(self, x: Tensor) -> Tensor:
-        tb3, tb6, tb9, tb12 = self.encoder(x)
+        skips = self.encoder(x)
 
-        output = self.decoder(tb3, tb6, tb9, tb12)
+        _, _, _, x4 = self.decoder(skips)
 
-        return self.head(output)
+        x = self.head(x4)
+
+        return x

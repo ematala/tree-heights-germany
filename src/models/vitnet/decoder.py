@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import List, Tuple
 
 from torch import Tensor
 from torch.nn import (
@@ -64,7 +64,9 @@ class DecoderBlock(Module):
         if prev is not None:
             x = self.combine_features(x, prev)
 
-        return self.upscale(x)
+        x = self.upscale(x)
+
+        return x
 
 
 class VitDecoder(Module):
@@ -80,10 +82,10 @@ class VitDecoder(Module):
         self.db3 = DecoderBlock(2, input_shape, output_shape)
         self.db4 = DecoderBlock(3, input_shape, output_shape)
 
-    def forward(self, tb3: Tensor, tb6: Tensor, tb9: Tensor, tb12: Tensor) -> Tensor:
-        x1 = self.db1(tb3)
-        x2 = self.db2(tb6, x1)
-        x3 = self.db3(tb9, x2)
-        x4 = self.db4(tb12, x3)
+    def forward(self, skips: List[Tensor]) -> List[Tensor]:
+        x1 = self.db1(skips[0])
+        x2 = self.db2(skips[1], x1)
+        x3 = self.db3(skips[2], x2)
+        x4 = self.db4(skips[3], x3)
 
-        return x4
+        return [x1, x2, x3, x4]

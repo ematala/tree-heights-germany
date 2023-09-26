@@ -54,4 +54,6 @@ class ReprojectionBlock(Module):
         # spatial concatenation
         x = self.spatial(x)
         # reprojection
-        return self.block(x)
+        x = self.block(x)
+
+        return x
