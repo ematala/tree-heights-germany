@@ -61,4 +61,6 @@ class VitNet(Module):
 
         x = self.head(x4)
 
+        x = x.squeeze()
+
         return x

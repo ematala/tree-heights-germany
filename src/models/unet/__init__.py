@@ -26,5 +26,6 @@ class Unet(Module):
         x = self.attention(x)
         x = self.decoder(x, skips)
         x = self.head(x)
+        x = x.squeeze()
 
         return x

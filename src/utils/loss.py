@@ -7,12 +7,9 @@ from torch.nn import HuberLoss
 def filter(
     outputs: Tensor, targets: Tensor, no_data: float = 0
 ) -> Tuple[Tensor, Tensor]:
-    outputs, targets = outputs.flatten(), targets.flatten()
+    mask = targets != no_data
 
-    outputs = outputs[targets != no_data]
-    targets = targets[targets != no_data]
-
-    return outputs, targets
+    return outputs[mask], targets[mask]
 
 
 def loss(
