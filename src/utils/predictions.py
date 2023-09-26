@@ -27,8 +27,8 @@ def predict_patch(
         outputs = model(image)
 
     # Move the image and prediction to CPU and remove batch dimension
-    image = image.squeeze(0).cpu().numpy()
-    outputs = outputs.squeeze(0).cpu().numpy()
+    image = image.squeeze().cpu().numpy()
+    outputs = outputs.squeeze().cpu().numpy()
 
     return image, outputs
 
