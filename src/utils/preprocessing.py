@@ -21,18 +21,17 @@ from src.utils.misc import get_label_bins, get_window_bounds
 class Preprocessor:
     def __init__(
         self,
-        patches_file: str = "data/patches/256/info.fth",
         img_dir: str = "data/images",
-        patch_dir: str = "data/patches/256",
-        gedi_file: str = "data/gedi/gedi_complete.fth",
+        patch_dir: str = "data/patches",
+        gedi_dir: str = "data/gedi",
         patch_size=256,
         image_size=4096,
         bins: List[int] = list(range(0, 55, 5)),
     ):
-        self.patches_file = patches_file
         self.img_dir = img_dir
-        self.patch_dir = patch_dir
-        self.gedi_file = gedi_file
+        self.patch_dir = f"{patch_dir}/{patch_size}"
+        self.patches_file = f"{self.patch_dir}/info.fth"
+        self.gedi_file = f"{gedi_dir}/gedi_complete.fth"
         self.patch_size = patch_size
         self.image_size = image_size
         self.n_patches = (self.image_size // self.patch_size) ** 2

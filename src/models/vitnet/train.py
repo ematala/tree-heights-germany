@@ -1,4 +1,3 @@
-# Imports
 import os
 
 from numpy import argmax
@@ -24,12 +23,10 @@ from . import VitNet
 
 if __name__ == "__main__":
     patch_size = 256
-    img_dir = "data/images"
-    log_dir = "logs"
-    model_dir = "models"
-    patch_dir = f"data/patches/{patch_size}"
-    patches_file = f"data/patches/{patch_size}/info.fth"
-    gedi_file = "data/gedi/gedi_complete.fth"
+    img_dir = os.getenv("IMG_DIR")
+    model_dir = os.getenv("MODEL_DIR")
+    patch_dir = os.getenv("PATCH_DIR")
+    gedi_file = os.getenv("GEDI_DIR")
     random_state = 42
     batch_size = 12
     num_workers = os.cpu_count()
@@ -45,7 +42,7 @@ if __name__ == "__main__":
     print(f"Using {device} device")
 
     # Create preprocessor
-    preprocessor = Preprocessor(patches_file, img_dir, patch_dir, gedi_file, patch_size)
+    preprocessor = Preprocessor(img_dir, patch_dir, gedi_file, patch_size)
 
     # Run preprocessor
     preprocessor.run()
@@ -75,9 +72,9 @@ if __name__ == "__main__":
     )
 
     # Create datasets
-    train_data = ForestDataset(train_patches, patch_dir)
-    val_data = ForestDataset(val_patches, patch_dir)
-    test_data = ForestDataset(test_patches, patch_dir)
+    train_data = ForestDataset(train_patches, f"{patch_dir}/{patch_size}")
+    val_data = ForestDataset(val_patches, f"{patch_dir}/{patch_size}")
+    test_data = ForestDataset(test_patches, f"{patch_dir}/{patch_size}")
 
     # Create weighted sampler
     weights = compute_sampling_weights(train_patches, labels, bins)
