@@ -1,4 +1,4 @@
-from typing import Callable, Optional
+from typing import Callable
 
 from torch import Tensor, no_grad
 from torch import device as Device
@@ -6,59 +6,61 @@ from torch import load as tload
 from torch import save as tsave
 from torch.nn import Module
 from torch.optim import Optimizer
+from torch.optim.lr_scheduler import LRScheduler
 from torch.utils.data import DataLoader
-from torch.utils.tensorboard import SummaryWriter
-from tqdm import tqdm
 
 
-def training(
-    dataloader: DataLoader,
+def train(
+    loader: DataLoader,
     model: Module,
-    fn: Callable[[Tensor, Tensor], Tensor],
+    criterion: Callable[[Tensor, Tensor], Tensor],
     device: Device,
-    writer: SummaryWriter,
-    epoch: int,
     optimizer: Optimizer,
+    scheduler: LRScheduler,
 ) -> None:
+    size = len(loader.dataset)
+
     model.train()
 
-    desc = f"Training Epoch {epoch+1}"
-
-    for batch, (inputs, targets) in enumerate(tqdm(dataloader, desc)):
+    for batch, (inputs, targets) in enumerate(loader):
         inputs, targets = inputs.to(device), targets.to(device)
-        outputs = model(inputs)
-        loss = fn(outputs, targets)
 
-        optimizer.zero_grad()
+        outputs = model(inputs)
+
+        loss = criterion(outputs, targets)
+
         loss.backward()
         optimizer.step()
+        optimizer.zero_grad()
 
-        writer.add_scalar("train/loss", loss.item(), epoch * len(dataloader) + batch)
+        scheduler.step()
+
+        if batch % 10 == 0:
+            loss, current = loss.item(), (batch + 1) * len(inputs)
+            print(f"Train loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
 
 
-def evaluation(
-    dataloader: DataLoader,
+def test(
+    loader: DataLoader,
     model: Module,
-    fn: Callable[[Tensor, Tensor], Tensor],
+    criterion: Callable[[Tensor, Tensor], Tensor],
     device: Device,
-    writer: Optional[SummaryWriter] = None,
-    epoch: Optional[int] = None,
 ) -> float:
     model.eval()
 
     loss: float = 0
-    desc = f"Validation Epoch {epoch+1}" if writer is not None else "Evaluation"
 
     with no_grad():
-        for inputs, targets in tqdm(dataloader, desc):
+        for inputs, targets in loader:
             inputs, targets = inputs.to(device), targets.to(device)
+
             outputs = model(inputs)
-            loss += fn(outputs, targets).item()
 
-    loss /= len(dataloader)
+            loss += criterion(outputs, targets).item()
 
-    if writer:
-        writer.add_scalar("validation/loss", loss, epoch)
+    loss /= len(loader)
+
+    print(f"Test loss: {loss:>8f}")
 
     return loss
 

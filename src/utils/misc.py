@@ -34,9 +34,9 @@ def get_label_bins(
     return count
 
 
-def seed(s: int = 42):
-    pyseed(s)
-    npseed(s)
-    tseed(s)
-    cseed(s)
-    cseed_all(s)
+def seed_everyting(seed: int = 42):
+    pyseed(seed)
+    npseed(seed)
+    tseed(seed)
+    cseed(seed)
+    cseed_all(seed)
