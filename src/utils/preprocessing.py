@@ -15,7 +15,7 @@ from rasterio.features import rasterize
 from shapely.geometry import box
 from tqdm import tqdm
 
-from src.utils.misc import get_label_bins, get_window_bounds
+from src.utils.misc import get_label_bins, get_normalized_image, get_window_bounds
 
 
 class Preprocessor:
@@ -119,8 +119,8 @@ class Preprocessor:
                     logging.error(f"Error rasterizing image {image}: {str(e)}")
                     continue
 
-                # Read the entire image into memory
-                img = src.read([3, 2, 1, 4])
+                # Read image from src
+                img = get_normalized_image(src)
 
                 subdir = os.path.join(self.patch_dir, image)
                 os.makedirs(subdir)

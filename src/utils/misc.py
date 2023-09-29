@@ -2,7 +2,7 @@ from random import seed as pyseed
 from typing import List, Tuple
 
 from numpy import histogram as nphist
-from numpy import ndarray
+from numpy import ndarray, stack
 from numpy.random import seed as npseed
 from torch import manual_seed as tseed
 from torch.cuda import manual_seed as cseed
@@ -23,8 +23,28 @@ def get_window_bounds(
     )
 
 
-def normalize_image(img: ndarray) -> ndarray:
-    return (img - img.min()) / (img.max() - img.min())
+def normalize(arr: ndarray) -> ndarray:
+    return (arr - arr.min()) / (arr.max() - arr.min())
+
+
+def get_normalized_image(src) -> ndarray:
+    # Swap order of bands
+    img = src.read([3, 2, 1, 4])
+
+    # Unpack image
+    R, G, B, NIR = img
+
+    # Calculate NDVI
+    NDVI = (NIR - R) / (NIR + R)
+
+    # Normalize NDVI into range [0, 1]
+    NDVI = (NDVI + 1) / 2
+
+    # Normalize image channels into range [0, 1]
+    R, G, B, NIR = normalize(img)
+
+    # Ensemble image
+    return stack([R, G, B, NIR, NDVI])
 
 
 def get_label_bins(

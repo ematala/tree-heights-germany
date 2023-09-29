@@ -8,7 +8,7 @@ from torch import Tensor, from_numpy, no_grad
 from torch import device as Device
 from torch.nn import Module
 
-from src.utils.misc import get_window_bounds, normalize_image
+from src.utils.misc import get_normalized_image, get_window_bounds
 
 
 def predict_patch(
@@ -37,8 +37,7 @@ def predict_image(
     model: Module, device: Device, img: str, patch_size: int
 ) -> Tuple[ndarray, ndarray]:
     with ropen(os.path.join(img)) as src:
-        image = src.read([3, 2, 1, 4])
-        image = normalize_image(image)
+        image = get_normalized_image(src)
 
     # Initialize an array to hold the predictions
     _, height, width = image.shape
