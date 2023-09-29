@@ -1,13 +1,20 @@
-from typing import Tuple
+from typing import List, Optional, Tuple
 
-from torch import Tensor
+from torch import Tensor, zeros, nan
 from torch.nn import HuberLoss
 
 
 def filter(
-    outputs: Tensor, targets: Tensor, no_data: float = 0
+    outputs: Tensor,
+    targets: Tensor,
+    range: Optional[Tuple[int, int]] = None,
+    no_data: float = 0,
 ) -> Tuple[Tensor, Tensor]:
     mask = targets != no_data
+
+    if range:
+        lower, upper = range
+        mask &= (targets >= lower) & (targets < upper)
 
     return outputs[mask], targets[mask]
 
@@ -25,11 +32,13 @@ def loss(
 
 
 def range_loss(
-    outputs: Tensor, targets: Tensor, lower: int, upper: int, delta: float = 3
+    outputs: Tensor, targets: Tensor, ranges: List[Tuple[int, int]]
 ) -> Tensor:
-    outputs, targets = filter(outputs, targets)
+    losses = zeros(len(ranges))
 
-    fn = HuberLoss("mean", delta)
-    idx = (targets >= lower) & (targets < upper)
+    for i, range in enumerate(ranges):
+        outputs, targets = filter(outputs, targets, range)
 
-    return fn(outputs[idx], targets[idx])
+        losses[i] = loss(outputs, targets) if targets.numel() > 0 else nan
+
+    return losses

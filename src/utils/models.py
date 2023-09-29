@@ -8,6 +8,7 @@ from torch.nn import Module
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler as LRScheduler
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 
 def train(
@@ -22,7 +23,7 @@ def train(
 
     model.train()
 
-    for batch, (inputs, targets) in enumerate(loader):
+    for batch, (inputs, targets) in enumerate(tqdm(loader, desc="Training")):
         inputs, targets = inputs.to(device), targets.to(device)
 
         outputs = model(inputs)
