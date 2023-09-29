@@ -35,7 +35,7 @@ def train(
 
         scheduler.step()
 
-        if batch % 10 == 0:
+        if batch % 100 == 0:
             loss, current = loss.item(), (batch + 1) * len(inputs)
             print(f"Train loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
 
