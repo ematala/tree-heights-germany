@@ -48,8 +48,10 @@ class ForestDataset(Dataset):
 
         image, patch = self.patches.index[idx]
 
+        filename = os.path.join(self.patch_dir, image, patch, ".h5")
+
         # Open the HDF5 file for the patch
-        with HDF5File(os.path.join(self.patch_dir, f"{image}/{patch}.h5")) as hf:
+        with HDF5File(filename) as hf:
             img = hf["image"][:]
             label = hf["label"][:]
 
