@@ -34,8 +34,11 @@ def get_normalized_image(src) -> ndarray:
     # Unpack image
     R, G, B, NIR = img
 
+    # Prevent division by zero
+    epsilon = 1e-8
+
     # Calculate NDVI
-    NDVI = (NIR - R) / (NIR + R)
+    NDVI = (NIR - R) / (NIR + R + epsilon)
 
     # Normalize NDVI into range [0, 1]
     NDVI = (NDVI + 1) / 2
