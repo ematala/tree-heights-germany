@@ -6,9 +6,9 @@ source ./.env
 read -p "Please select model [vitnet=v/unet=u]: " model
 
 if [ "$model" == "v" ]; then
-    python3 -m src.models.vitnet.train > logs/train-v.log
+    python3 -m src.models.vitnet.train | tee logs/train-v.log
 elif [ "$model" == "u" ]; then
-    python3 -m src.models.unet.train > logs/train-u.log
+    python3 -m src.models.unet.train | tee logs/train-u.log
 else
     echo "Model unknown."
     exit 1
