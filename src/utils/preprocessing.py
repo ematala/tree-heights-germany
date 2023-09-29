@@ -174,4 +174,8 @@ class Preprocessor:
 
 
 if __name__ == "__main__":
-    Preprocessor().run()
+    Preprocessor(
+        img_dir=os.getenv("IMG_DIR"),
+        patch_dir=os.getenv("PATCH_DIR"),
+        gedi_dir=os.getenv("GEDI_DIR"),
+    ).run()
