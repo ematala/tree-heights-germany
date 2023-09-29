@@ -8,7 +8,7 @@ from torch import Tensor, from_numpy, no_grad
 from torch import device as Device
 from torch.nn import Module
 
-from src.utils.misc import get_normalized_image, get_window_bounds
+from .misc import get_normalized_image, get_window_bounds
 
 
 def predict_patch(
