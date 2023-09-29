@@ -48,7 +48,7 @@ class ForestDataset(Dataset):
 
         image, patch = self.patches.index[idx]
 
-        filename = os.path.join(self.patch_dir, image, patch, ".h5")
+        filename = os.path.join(self.patch_dir, image, f"{patch}.h5")
 
         # Open the HDF5 file for the patch
         with HDF5File(filename) as hf:
