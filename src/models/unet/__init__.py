@@ -8,7 +8,7 @@ from .output import OutputHead
 
 
 class Unet(Module):
-    def __init__(self, in_channels: int = 4):
+    def __init__(self, in_channels: int = 5):
         super(Unet, self).__init__()
 
         self.name = f"unet-{in_channels}"

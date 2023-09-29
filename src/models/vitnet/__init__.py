@@ -12,7 +12,7 @@ class VitNet(Module):
         self,
         image_size: int = 256,
         patch_size: int = 16,
-        num_channels: int = 4,
+        num_channels: int = 5,
         num_hidden_layers: int = 12,
         num_attention_heads: int = 8,
         hidden_size: int = 512,
