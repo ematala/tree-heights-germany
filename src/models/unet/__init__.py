@@ -11,7 +11,9 @@ class Unet(Module):
     def __init__(self, in_channels: int = 5):
         super(Unet, self).__init__()
 
-        self.name = f"unet-{in_channels}"
+        self.name = "unet"
+
+        self.config = {"in_channels": in_channels}
 
         self.encoder = UnetEncoder(in_channels)
         self.attention = SelfAwareAttention()

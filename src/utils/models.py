@@ -66,8 +66,8 @@ def test(
     return loss
 
 
-def load(model: Module, path: str, device: Device) -> Module:
-    model.load_state_dict(tload(path, map_location=device))
+def load(path: str, device: Device) -> Module:
+    model = tload(path, map_location=device)
 
     model.eval()
 
@@ -75,4 +75,4 @@ def load(model: Module, path: str, device: Device) -> Module:
 
 
 def save(model: Module, path: str) -> None:
-    tsave(model.state_dict(), path)
+    tsave(model, path)

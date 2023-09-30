@@ -29,7 +29,7 @@ class VitNet(Module):
                 "intermediate_size should be greater than or equal to hidden_size"
             )
 
-        self.name = f"vitnet-{hidden_size}"
+        self.name = "vitnet"
 
         self.config = ViTConfig(
             image_size=image_size,
