@@ -9,8 +9,8 @@ from .dataset import ForestDataset
 
 def get_splits(
     patches: DataFrame,
-    val_size: float = 0.15,
-    test_size: float = 0.15,
+    val_size: float = 0.1,
+    test_size: float = 0.1,
     random_state: int = 42,
 ) -> Tuple[DataFrame, DataFrame, DataFrame]:
     train, rest = train_test_split(
