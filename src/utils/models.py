@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Callable, Optional
 
 from torch import Tensor, no_grad
 from torch import device as Device
@@ -17,7 +17,7 @@ def train(
     criterion: Callable[[Tensor, Tensor], Tensor],
     device: Device,
     optimizer: Optimizer,
-    scheduler: LRScheduler,
+    scheduler: Optional[LRScheduler] = None,
 ) -> None:
     size = len(loader.dataset)
 
@@ -34,7 +34,8 @@ def train(
         optimizer.step()
         optimizer.zero_grad()
 
-        scheduler.step()
+        if scheduler:
+            scheduler.step()
 
         if batch % 100 == 0:
             loss, current = loss.item(), (batch + 1) * len(inputs)
