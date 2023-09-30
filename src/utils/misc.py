@@ -1,10 +1,13 @@
 from random import seed as pyseed
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 from numpy import histogram as nphist
 from numpy import ndarray, stack
 from numpy.random import seed as npseed
+from torch import device as Device
 from torch import manual_seed as tseed
+from torch.backends.mps import is_available as mps_available
+from torch.cuda import is_available as cuda_available
 from torch.cuda import manual_seed as cseed
 from torch.cuda import manual_seed_all as cseed_all
 
@@ -63,3 +66,15 @@ def seed_everyting(seed: int = 42):
     tseed(seed)
     cseed(seed)
     cseed_all(seed)
+
+
+def get_device(device: Optional[str] = None) -> Device:
+    return Device(
+        device
+        if device
+        else "cuda"
+        if cuda_available()
+        else "mps"
+        if mps_available()
+        else "cpu"
+    )

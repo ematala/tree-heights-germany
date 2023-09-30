@@ -23,12 +23,15 @@ def get_splits(
 
 
 def get_datasets(
-    train: DataFrame, val: DataFrame, test: DataFrame
+    train_df: DataFrame,
+    val_df: DataFrame,
+    test_df: DataFrame,
+    patch_dir: str,
 ) -> Tuple[Dataset, Dataset, Dataset]:
     return (
-        ForestDataset(train),
-        ForestDataset(val),
-        ForestDataset(test),
+        ForestDataset(train_df, patch_dir),
+        ForestDataset(val_df, patch_dir),
+        ForestDataset(test_df, patch_dir),
     )
 
 
