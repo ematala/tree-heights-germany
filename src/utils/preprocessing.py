@@ -172,6 +172,8 @@ class Preprocessor:
         logging.info("Patch info saved.")
         logging.info("Done.")
 
+        return self
+
 
 if __name__ == "__main__":
     Preprocessor(

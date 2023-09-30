@@ -68,13 +68,15 @@ def seed_everyting(seed: int = 42):
     cseed_all(seed)
 
 
-def get_device(device: Optional[str] = None) -> Device:
-    return Device(
-        device
-        if device
+def get_device(dev: Optional[str] = None) -> Device:
+    device = Device(
+        dev
+        if dev
         else "cuda"
         if cuda_available()
         else "mps"
         if mps_available()
         else "cpu"
     )
+    print(f"Using {device} device")
+    return device

@@ -1,18 +1,14 @@
 import os
 
-from numpy import argmax
-from sklearn.model_selection import train_test_split as split
-from torch import device as Device
-from torch.backends.mps import is_available as mps_available
-from torch.cuda import is_available as cuda_available
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import CosineAnnealingLR
-from torch.utils.data import DataLoader, WeightedRandomSampler
 
 from ...utils import (
-    ForestDataset,
     Preprocessor,
-    compute_sampling_weights,
+    get_dataloaders,
+    get_datasets,
+    get_device,
+    get_splits,
     loss,
     save,
     seed_everyting,
@@ -22,7 +18,7 @@ from ...utils import (
 from . import VitNet
 
 if __name__ == "__main__":
-    patch_size = 256
+    patch_size = 64
     img_dir = os.getenv("IMG_DIR")
     model_dir = os.getenv("MODEL_DIR")
     patch_dir = os.getenv("PATCH_DIR")
@@ -33,13 +29,11 @@ if __name__ == "__main__":
     learning_rate = 1e-4
     epochs = 25
     bins = list(range(0, 55, 5))
-    device = Device("cuda" if cuda_available() else "mps" if mps_available() else "cpu")
+    device = get_device()
 
     seed_everyting(random_state)
 
     print("Starting training")
-
-    print(f"Using {device} device")
 
     # Create preprocessor
     preprocessor = Preprocessor(img_dir, patch_dir, gedi_file, patch_size)
@@ -53,41 +47,24 @@ if __name__ == "__main__":
     # Get patches
     patches = preprocessor.patches
 
-    print(f"Total number of patches: {len(patches)}")
-
-    # Create stratification
-    stratify = patches.bins.apply(argmax)
-
-    # Split patches
-    train_patches, rest_patches = split(
-        patches, test_size=0.3, random_state=random_state, stratify=stratify
-    )
-
-    # Create stratification for rest
-    stratify = stratify[patches.index.isin(rest_patches.index)]
-
-    # Split rest
-    val_patches, test_patches = split(
-        rest_patches, test_size=0.5, random_state=random_state, stratify=stratify
-    )
+    # Create splits
+    train_df, val_df, test_df = get_splits(patches)
 
     # Create datasets
-    train_data = ForestDataset(train_patches, f"{patch_dir}/{patch_size}")
-    val_data = ForestDataset(val_patches, f"{patch_dir}/{patch_size}")
-    test_data = ForestDataset(test_patches, f"{patch_dir}/{patch_size}")
-
-    # Create weighted sampler
-    weights = compute_sampling_weights(train_patches, labels, bins)
-    sampler = WeightedRandomSampler(weights, len(train_patches))
+    train_ds, val_ds, test_ds = get_datasets(
+        train_df, val_df, test_df, f"{patch_dir}/{patch_size}"
+    )
 
     # Create dataloaders
-    train_loader = DataLoader(
-        train_data, batch_size, False, sampler, num_workers=num_workers
+    train_dl, val_dl, test_dl = get_dataloaders(
+        train_ds, val_ds, test_ds, batch_size, num_workers
     )
-    val_loader = DataLoader(val_data, batch_size, False, num_workers=num_workers)
-    test_loader = DataLoader(test_data, batch_size, False, num_workers=num_workers)
 
-    model = VitNet(hidden_size=256).to(device)
+    model = VitNet(
+        image_size=patch_size,
+        hidden_size=patch_size * 2,
+        intermediate_size=patch_size * 4,
+    ).to(device)
 
     # Create optimizer
     optimizer = AdamW(model.parameters(), learning_rate)
@@ -98,12 +75,10 @@ if __name__ == "__main__":
     # Training loop
     for epoch in range(epochs):
         print(f"Epoch {epoch + 1}\n-------------------------------")
-        train(train_loader, model, loss, device, optimizer, scheduler)
-        test(val_loader, model, loss, device)
+        train(train_dl, model, loss, device, optimizer, scheduler)
+        test(val_dl, model, loss, device)
 
     # Save model
-    print(f"Saving model {model.name}")
+    print(f"Training finished. Saving model {model.name}")
 
-    model_file = os.path.join(model_dir, f"m-{model.name}-p{patch_size}-e{epochs}.pt")
-
-    save(model, model_file)
+    save(model, os.path.join(model_dir, f"{model.name}.pt"))
