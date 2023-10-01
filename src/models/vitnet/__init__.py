@@ -40,6 +40,7 @@ class VitNet(Module):
             hidden_size=hidden_size,
             intermediate_size=intermediate_size,
             output_hidden_states=True,
+            output_attentions=True,
         )
 
         self.encoder = VitEncoder(self.config)
