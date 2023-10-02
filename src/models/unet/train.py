@@ -4,11 +4,8 @@ from torch.optim import SGD
 from torch.optim.lr_scheduler import CosineAnnealingLR
 
 from ...utils import (
-    Preprocessor,
-    get_dataloaders,
-    get_datasets,
+    get_data,
     get_device,
-    get_splits,
     loss,
     save,
     seed_everyting,
@@ -35,29 +32,15 @@ if __name__ == "__main__":
 
     print("Starting training")
 
-    # Create preprocessor
-    preprocessor = Preprocessor(img_dir, patch_dir, gedi_file, patch_size)
-
-    # Run preprocessor
-    preprocessor.run()
-
-    # Get labels
-    labels = preprocessor.gedi.rh98
-
-    # Get patches
-    patches = preprocessor.patches
-
-    # Create splits
-    train_df, val_df, test_df = get_splits(patches)
-
-    # Create datasets
-    train_ds, val_ds, test_ds = get_datasets(
-        train_df, val_df, test_df, f"{patch_dir}/{patch_size}"
-    )
-
-    # Create dataloaders
-    train_dl, val_dl, test_dl = get_dataloaders(
-        train_ds, val_ds, test_ds, batch_size, num_workers
+    # Get data
+    train_dl, val_dl, test_dl = get_data(
+        img_dir,
+        patch_dir,
+        gedi_file,
+        patch_size,
+        batch_size,
+        num_workers,
+        bins,
     )
 
     model = Unet().to(device)
@@ -74,7 +57,11 @@ if __name__ == "__main__":
         train(train_dl, model, loss, device, optimizer, scheduler)
         test(val_dl, model, loss, device)
 
-    # Save model
-    print(f"Training finished. Saving model {model.name}")
+    print("Training finished.")
 
-    save(model, os.path.join(model_dir, f"{model.name}.pt"))
+    test(test_dl, model, loss, device)
+
+    # Save model
+    print(f"Saving model {model.name}")
+
+    save(model, os.path.join(model_dir, f"{model.name}-{patch_size}.pt"))
