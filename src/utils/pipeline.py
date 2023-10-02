@@ -69,14 +69,14 @@ def get_dataloaders(
 def get_data(
     img_dir: str,
     patch_dir: str,
-    gedi_file: str,
+    gedi_dir: str,
     patch_size: int,
     batch_size: int = 1,
     num_workers: int = 0,
     bins: List[int] = list(range(0, 55, 5)),
 ):
     # Create preprocessor
-    preprocessor = Preprocessor(img_dir, patch_dir, gedi_file, patch_size)
+    preprocessor = Preprocessor(img_dir, patch_dir, gedi_dir, patch_size)
 
     # Run preprocessor
     preprocessor.run()
