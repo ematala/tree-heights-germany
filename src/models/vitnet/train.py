@@ -19,9 +19,10 @@ if __name__ == "__main__":
     img_dir = os.getenv("IMG_DIR")
     model_dir = os.getenv("MODEL_DIR")
     patch_dir = os.getenv("PATCH_DIR")
+    results_dir = os.getenv("RESULTS_DIR")
     gedi_file = os.getenv("GEDI_DIR")
     random_state = 42
-    batch_size = 12
+    batch_size = 512
     num_workers = os.cpu_count()
     learning_rate = 1e-4
     epochs = 25
@@ -43,10 +44,11 @@ if __name__ == "__main__":
         bins,
     )
 
+    # Create model
     model = VitNet(
         image_size=patch_size,
-        hidden_size=patch_size * 2,
-        intermediate_size=patch_size * 4,
+        hidden_size=patch_size * 4,
+        intermediate_size=patch_size * 8,
     ).to(device)
 
     # Create optimizer
@@ -63,9 +65,10 @@ if __name__ == "__main__":
 
     print("Training finished.")
 
+    # Test model
     test(test_dl, model, loss, device)
 
-    # Save model
     print(f"Saving model {model.name}")
 
-    save(model, os.path.join(model_dir, f"{model.name}-{patch_size}.pt"))
+    # Save model
+    save(model, os.path.join(model_dir, f"{model.name}-{patch_size}-e{epochs}.pt"))

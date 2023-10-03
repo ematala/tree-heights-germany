@@ -67,4 +67,4 @@ if __name__ == "__main__":
     print(f"Saving model {model.name}")
 
     # Save model
-    save(model, os.path.join(model_dir, f"{model.name}-{patch_size}.pt"))
+    save(model, os.path.join(model_dir, f"{model.name}-{patch_size}-e{epochs}.pt"))
