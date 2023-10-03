@@ -19,9 +19,10 @@ if __name__ == "__main__":
     img_dir = os.getenv("IMG_DIR")
     model_dir = os.getenv("MODEL_DIR")
     patch_dir = os.getenv("PATCH_DIR")
+    results_dir = os.getenv("RESULTS_DIR")
     gedi_file = os.getenv("GEDI_DIR")
     random_state = 42
-    batch_size = 12
+    batch_size = 64
     num_workers = os.cpu_count()
     learning_rate = 1e-2
     epochs = 25
@@ -43,6 +44,7 @@ if __name__ == "__main__":
         bins,
     )
 
+    # Create model
     model = Unet().to(device)
 
     # Create optimizer
@@ -59,9 +61,10 @@ if __name__ == "__main__":
 
     print("Training finished.")
 
+    # Test model
     test(test_dl, model, loss, device)
 
-    # Save model
     print(f"Saving model {model.name}")
 
+    # Save model
     save(model, os.path.join(model_dir, f"{model.name}-{patch_size}.pt"))

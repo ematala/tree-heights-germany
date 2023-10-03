@@ -52,7 +52,7 @@ class VitNet(Module):
 
         self.head = OutputHead(hidden_size)
 
-    def count_params(self):
+    def count_params(self) -> int:
         return sum([p.numel() for p in self.parameters() if p.requires_grad])
 
     def forward(self, x: Tensor) -> Tensor:

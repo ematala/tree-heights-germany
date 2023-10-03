@@ -1,33 +1,42 @@
+from typing import Any, Dict, List, Optional, Union
+
+from segmentation_models_pytorch import Unet as SegmentationUnet
 from torch import Tensor
-from torch.nn import Module
-
-from .attention import SelfAwareAttention
-from .decoder import UnetDecoder
-from .encoder import UnetEncoder
-from .output import OutputHead
 
 
-class Unet(Module):
-    def __init__(self, in_channels: int = 5):
-        super(Unet, self).__init__()
+class Unet(SegmentationUnet):
+    def __init__(
+        self,
+        encoder_name: str = "efficientnet-b4",
+        encoder_depth: int = 5,
+        encoder_weights: Optional[str] = None,
+        decoder_use_batchnorm: bool = True,
+        decoder_channels: List[int] = [256, 128, 64, 32, 16],
+        decoder_attention_type: Optional[str] = "scse",
+        in_channels: int = 5,
+        classes: int = 1,
+        activation: Union[str, Any, None] = None,
+        aux_params: Optional[Dict] = None,
+        **kwargs: Any
+    ):
+        super(Unet, self).__init__(
+            encoder_name=encoder_name,
+            encoder_depth=encoder_depth,
+            encoder_weights=encoder_weights,
+            decoder_use_batchnorm=decoder_use_batchnorm,
+            decoder_channels=decoder_channels,
+            decoder_attention_type=decoder_attention_type,
+            in_channels=in_channels,
+            classes=classes,
+            activation=activation,
+            aux_params=aux_params,
+            **kwargs
+        )
 
-        self.name = "unet"
-
-        self.config = {"in_channels": in_channels}
-
-        self.encoder = UnetEncoder(in_channels)
-        self.attention = SelfAwareAttention()
-        self.decoder = UnetDecoder(in_channels * (2**4))
-        self.head = OutputHead(in_channels)
-
-    def count_params(self):
+    def count_params(self) -> int:
         return sum([p.numel() for p in self.parameters() if p.requires_grad])
 
     def forward(self, x: Tensor) -> Tensor:
-        x, skips = self.encoder(x)
-        x = self.attention(x)
-        x = self.decoder(x, skips)
-        x = self.head(x)
+        x = super().forward(x)
         x = x.squeeze()
-
         return x
