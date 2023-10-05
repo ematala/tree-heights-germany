@@ -70,13 +70,13 @@ def get_data(
     img_dir: str,
     patch_dir: str,
     gedi_dir: str,
-    patch_size: int,
+    image_size: int,
     batch_size: int = 1,
     num_workers: int = 0,
     bins: List[int] = list(range(0, 55, 5)),
 ):
     # Create preprocessor
-    preprocessor = Preprocessor(img_dir, patch_dir, gedi_dir, patch_size)
+    preprocessor = Preprocessor(img_dir, patch_dir, gedi_dir, image_size)
 
     # Run preprocessor
     preprocessor.run()
@@ -101,7 +101,7 @@ def get_data(
 
     # Create datasets
     train_ds, val_ds, test_ds = get_datasets(
-        train_df, val_df, test_df, f"{patch_dir}/{patch_size}"
+        train_df, val_df, test_df, f"{patch_dir}/{image_size}"
     )
 
     # Create dataloaders

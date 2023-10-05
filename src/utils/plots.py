@@ -1,11 +1,13 @@
 import os
 
+from geopandas import read_file, sjoin
 from matplotlib.pyplot import figure, show, subplots
 from numpy import minimum, ndarray
 from rasterio import open as ropen
 from rasterio.plot import show as rshow
 
 from .misc import get_normalized_image
+from .preprocessing import Preprocessor
 
 
 def brighten(image: ndarray, factor: float = 5.0) -> ndarray:
@@ -73,3 +75,30 @@ def plot_image_channels(image: str) -> None:
             ax.axis("off")
 
         show()
+
+
+def plot_labels_in_germany(shapefile: str = "data/germany/germany.geojson") -> None:
+    preprocessor = Preprocessor()
+    preprocessor._load_gedi()
+
+    gedi = preprocessor.gedi
+
+    germany = read_file(os.path.join(shapefile)).to_crs("EPSG:3857")
+
+    gedi = gedi[(gedi.rh98 > 3) & (gedi.rh98 < 50)]
+
+    gedi_germany = sjoin(gedi, germany, how="inner", op="within")
+
+    fig, ax = subplots(figsize=(10, 10))
+
+    gedi_germany.plot(
+        cmap="viridis",
+        column="rh98",
+        marker="x",
+        markersize=0.1,
+        ax=ax,
+    )
+    ax.set_aspect("equal", "box")
+    ax.set_axis_off()
+
+    show()
