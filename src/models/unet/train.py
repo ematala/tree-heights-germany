@@ -15,12 +15,13 @@ from ...utils import (
 from . import Unet
 
 if __name__ == "__main__":
-    patch_size = 256
+    image_size = 256
     img_dir = os.getenv("IMG_DIR")
     model_dir = os.getenv("MODEL_DIR")
     patch_dir = os.getenv("PATCH_DIR")
     results_dir = os.getenv("RESULTS_DIR")
     gedi_file = os.getenv("GEDI_DIR")
+    encoder = "efficientnet-b4"
     random_state = 42
     batch_size = 64
     num_workers = os.cpu_count()
@@ -38,14 +39,16 @@ if __name__ == "__main__":
         img_dir,
         patch_dir,
         gedi_file,
-        patch_size,
+        image_size,
         batch_size,
         num_workers,
         bins,
     )
 
     # Create model
-    model = Unet().to(device)
+    model = Unet(encoder).to(device)
+
+    print(f"Learnable params: {model.count_params():,}")
 
     # Create optimizer
     optimizer = SGD(model.parameters(), learning_rate)
@@ -67,4 +70,7 @@ if __name__ == "__main__":
     print(f"Saving model {model.name}")
 
     # Save model
-    save(model, os.path.join(model_dir, f"{model.name}-{patch_size}-e{epochs}.pt"))
+    save(
+        model,
+        os.path.join(model_dir, "unet", f"{model.name}-{image_size}-e{epochs}.pt"),
+    )

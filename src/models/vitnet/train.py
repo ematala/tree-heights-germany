@@ -15,14 +15,14 @@ from ...utils import (
 from . import VitNet
 
 if __name__ == "__main__":
-    patch_size = 64
+    image_size = 256
     img_dir = os.getenv("IMG_DIR")
     model_dir = os.getenv("MODEL_DIR")
     patch_dir = os.getenv("PATCH_DIR")
     results_dir = os.getenv("RESULTS_DIR")
     gedi_file = os.getenv("GEDI_DIR")
     random_state = 42
-    batch_size = 512
+    batch_size = 64
     num_workers = os.cpu_count()
     learning_rate = 1e-4
     epochs = 25
@@ -38,18 +38,16 @@ if __name__ == "__main__":
         img_dir,
         patch_dir,
         gedi_file,
-        patch_size,
+        image_size,
         batch_size,
         num_workers,
         bins,
     )
 
     # Create model
-    model = VitNet(
-        image_size=patch_size,
-        hidden_size=patch_size * 4,
-        intermediate_size=patch_size * 8,
-    ).to(device)
+    model = VitNet(image_size).to(device)
+
+    print(f"Learnable params: {model.count_params():,}")
 
     # Create optimizer
     optimizer = AdamW(model.parameters(), learning_rate)
@@ -71,4 +69,7 @@ if __name__ == "__main__":
     print(f"Saving model {model.name}")
 
     # Save model
-    save(model, os.path.join(model_dir, f"{model.name}-{patch_size}-e{epochs}.pt"))
+    save(
+        model,
+        os.path.join(model_dir, "vitnet", f"{model.name}-{image_size}-e{epochs}.pt"),
+    )
