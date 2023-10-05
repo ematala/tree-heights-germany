@@ -14,9 +14,9 @@ class VitNet(Module):
         patch_size: int = 16,
         num_channels: int = 5,
         num_hidden_layers: int = 12,
-        num_attention_heads: int = 8,
-        hidden_size: int = 512,
-        intermediate_size: int = 2048,
+        num_attention_heads: int = 16,
+        hidden_size: int = 128,
+        intermediate_size: int = 256,
     ):
         super(VitNet, self).__init__()
 
