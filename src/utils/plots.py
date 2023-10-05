@@ -1,10 +1,18 @@
-from matplotlib.pyplot import figure, show
+import os
+
+from matplotlib.pyplot import figure, show, subplots
 from numpy import minimum, ndarray
+from rasterio import open as ropen
+from rasterio.plot import show as rshow
+
+from .misc import get_normalized_image
 
 
-def plot_image_and_prediction(
-    image: ndarray, prediction: ndarray, brighten: float = 1.0
-):
+def brighten(image: ndarray, factor: float = 5.0) -> ndarray:
+    return minimum(image * factor, 1)
+
+
+def plot_image_and_prediction(image: ndarray, prediction: ndarray):
     """
     Plots the original image and the prediction side by side.
 
@@ -18,7 +26,7 @@ def plot_image_and_prediction(
     image = image[:3, :, :].transpose(1, 2, 0)
 
     # Brighten the image using the simplified method
-    image = minimum(image * brighten, 1)
+    image = brighten(image)
 
     # Create a custom grid for the image, prediction, and colorbar
     fig = figure(figsize=(14, 6))
@@ -42,3 +50,26 @@ def plot_image_and_prediction(
     )
 
     show()
+
+
+def plot_image_channels(image: str) -> None:
+    with ropen(os.path.join(image)) as src:
+        img = get_normalized_image(src)
+
+        red, green, blue, nir, ndvi = img
+
+        rgb, red, green, blue = [brighten(c) for c in [img[:3], red, green, blue]]
+
+        _, (axrgb, axr, axg, axb, axnir, axndvi) = subplots(1, 6, figsize=(31, 7))
+
+        rshow(rgb, ax=axrgb, title="RGB", vmin=0, vmax=1)
+        rshow(red, ax=axr, cmap="Reds", title="Red", vmin=0, vmax=1)
+        rshow(green, ax=axg, cmap="Greens", title="Green", vmin=0, vmax=1)
+        rshow(blue, ax=axb, cmap="Blues", title="Blue", vmin=0, vmax=1)
+        rshow(nir, ax=axnir, cmap="viridis", title="NIR", vmin=0, vmax=1)
+        rshow(ndvi, ax=axndvi, cmap="RdYlGn", title="NDVI", vmin=0, vmax=1)
+
+        for ax in [axr, axg, axb, axnir, axndvi, axrgb]:
+            ax.axis("off")
+
+        show()
