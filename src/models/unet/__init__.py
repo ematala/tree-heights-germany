@@ -7,7 +7,7 @@ from torch import Tensor
 class Unet(SegmentationUnet):
     def __init__(
         self,
-        encoder_name: str = "efficientnet-b4",
+        encoder_name: str = "efficientnet-b2",
         encoder_depth: int = 5,
         encoder_weights: Optional[str] = None,
         decoder_use_batchnorm: bool = True,

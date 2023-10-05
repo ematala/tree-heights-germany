@@ -22,8 +22,8 @@ if __name__ == "__main__":
     results_dir = os.getenv("RESULTS_DIR")
     gedi_file = os.getenv("GEDI_DIR")
     random_state = 42
-    batch_size = 64
-    num_workers = os.cpu_count()
+    batch_size = 128
+    num_workers = os.cpu_count() // 2
     learning_rate = 1e-4
     epochs = 25
     bins = list(range(0, 55, 5))

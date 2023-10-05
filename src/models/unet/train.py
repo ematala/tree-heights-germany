@@ -21,10 +21,10 @@ if __name__ == "__main__":
     patch_dir = os.getenv("PATCH_DIR")
     results_dir = os.getenv("RESULTS_DIR")
     gedi_file = os.getenv("GEDI_DIR")
-    encoder = "efficientnet-b4"
+    encoder = "efficientnet-b2"
     random_state = 42
-    batch_size = 64
-    num_workers = os.cpu_count()
+    batch_size = 128
+    num_workers = os.cpu_count() // 2
     learning_rate = 1e-2
     epochs = 25
     bins = list(range(0, 55, 5))
