@@ -1,3 +1,4 @@
+from typing import Any
 from torch import Tensor
 from torch.nn import Module
 from transformers import ViTConfig
@@ -17,6 +18,8 @@ class VitNet(Module):
         num_attention_heads: int = 16,
         hidden_size: int = 128,
         intermediate_size: int = 256,
+        hidden_dropout_prob: float = 0.1,
+        **kwargs: Any,
     ):
         super(VitNet, self).__init__()
 
@@ -39,8 +42,10 @@ class VitNet(Module):
             num_attention_heads=num_attention_heads,
             hidden_size=hidden_size,
             intermediate_size=intermediate_size,
+            hidden_dropout_prob=hidden_dropout_prob,
             output_hidden_states=True,
             output_attentions=True,
+            **kwargs,
         )
 
         self.encoder = VitEncoder(self.config)
