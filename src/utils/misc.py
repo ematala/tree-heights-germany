@@ -69,7 +69,7 @@ def seed_everyting(seed: int = 42):
 
 
 def get_device(dev: Optional[str] = None) -> Device:
-    device = Device(
+    return Device(
         dev
         if dev
         else "cuda"
@@ -78,5 +78,3 @@ def get_device(dev: Optional[str] = None) -> Device:
         if mps_available()
         else "cpu"
     )
-    print(f"Using {device} device")
-    return device
