@@ -54,7 +54,7 @@ def get_args():
     parser = ArgumentParser(description="Train model")
     parser.add_argument(
         "--model",
-        choices=["unet", "u-resnet", "vit-base", "vit-large"],
+        choices=["unet", "u-resnet", "u-plusplus", "vit-base", "vit-large"],
         default="unet",
         help="Model type [default: unet]",
     )
