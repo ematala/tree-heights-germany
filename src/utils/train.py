@@ -9,6 +9,7 @@ import requests
 from torch.nn import Module
 from torch.optim import SGD, AdamW, Optimizer
 from torch.optim.lr_scheduler import CosineAnnealingLR
+from torch.utils.tensorboard import SummaryWriter
 
 from ..models import ResidualUnet, Unet, VitNet
 from . import (
@@ -124,16 +125,21 @@ if __name__ == "__main__":
     # Create scheduler
     scheduler = CosineAnnealingLR(optimizer, epochs)
 
+    writer = SummaryWriter(log_dir)
+
     # Training loop
     for epoch in range(epochs):
         info(f"Epoch {epoch + 1}\n-------------------------------")
-        train(train_dl, model, loss, device, optimizer, scheduler)
-        test(val_dl, model, loss, device)
+        train(model, train_dl, loss, device, epoch, optimizer, scheduler, writer)
+        test(model, val_dl, loss, device, epoch, writer)
+
+    # Close writer
+    writer.close()
 
     info("Training finished.")
 
     # Test model
-    test(test_dl, model, loss, device)
+    test(model, test_dl, loss, device)
 
     info(f"Saving model {model.name}")
 

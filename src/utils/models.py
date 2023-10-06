@@ -8,16 +8,19 @@ from torch.nn import Module
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler as LRScheduler
 from torch.utils.data import DataLoader
+from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
 
 def train(
-    loader: DataLoader,
     model: Module,
+    loader: DataLoader,
     criterion: Callable[[Tensor, Tensor], Tensor],
     device: Device,
+    epoch: int,
     optimizer: Optimizer,
     scheduler: Optional[LRScheduler] = None,
+    writer: Optional[SummaryWriter] = None,
 ) -> None:
     size = len(loader.dataset)
 
@@ -40,13 +43,17 @@ def train(
         if batch % 100 == 0:
             loss, current = loss.item(), (batch + 1) * len(inputs)
             print(f"Train loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
+            if writer:
+                writer.add_scalar("Loss/train", loss, epoch * len(loader) + batch)
 
 
 def test(
-    loader: DataLoader,
     model: Module,
+    loader: DataLoader,
     criterion: Callable[[Tensor, Tensor], Tensor],
     device: Device,
+    epoch: Optional[int] = None,
+    writer: Optional[SummaryWriter] = None,
 ) -> float:
     model.eval()
 
@@ -63,6 +70,8 @@ def test(
     loss /= len(loader)
 
     print(f"Test loss: {loss:>8f}")
+    if writer and epoch:
+        writer.add_scalar("Loss/test", loss, epoch)
 
     return loss
 
