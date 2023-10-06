@@ -1,15 +1,15 @@
 from typing import Any, Dict, List, Optional, Union
 
-from segmentation_models_pytorch import Unet as SegmentationUnet
+from segmentation_models_pytorch import UnetPlusPlus as SegmentationUnetPlusPlus
 from torch import Tensor
 
 
-class Unet(SegmentationUnet):
+class UnetPlusPlus(SegmentationUnetPlusPlus):
     def __init__(
         self,
         encoder_name: str = "efficientnet-b2",
         encoder_depth: int = 5,
-        encoder_weights: Optional[str] = None,
+        encoder_weights: str | None = None,
         decoder_use_batchnorm: bool = True,
         decoder_channels: List[int] = [256, 128, 64, 32, 16],
         decoder_attention_type: Optional[str] = "scse",
@@ -19,7 +19,7 @@ class Unet(SegmentationUnet):
         aux_params: Optional[Dict] = None,
         **kwargs: Any
     ):
-        super(Unet, self).__init__(
+        super().__init__(
             encoder_name=encoder_name,
             encoder_depth=encoder_depth,
             encoder_weights=encoder_weights,
@@ -37,6 +37,6 @@ class Unet(SegmentationUnet):
         return sum([p.numel() for p in self.parameters() if p.requires_grad])
 
     def forward(self, x: Tensor) -> Tensor:
-        x = super(Unet, self).forward(x)
+        x = super(UnetPlusPlus, self).forward(x)
         x = x.squeeze()
         return x

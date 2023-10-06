@@ -1,7 +1,6 @@
 import logging
 import os
 from argparse import ArgumentParser
-from datetime import datetime
 from logging import info
 from typing import Tuple
 
@@ -11,7 +10,7 @@ from torch.optim import SGD, AdamW, Optimizer
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.tensorboard import SummaryWriter
 
-from ..models import ResidualUnet, Unet, VitNet
+from ..models import ResidualUnet, Unet, UnetPlusPlus, VitNet
 from . import (
     get_data,
     get_device,
@@ -32,6 +31,10 @@ def get_config(model: str = "unet") -> Tuple[Module, Optimizer]:
         "u-resnet": [
             ResidualUnet(),
             SGD(ResidualUnet().parameters(), 1e-2),
+        ],
+        "u-plusplus": [
+            UnetPlusPlus(),
+            SGD(UnetPlusPlus().parameters(), 1e-2),
         ],
         "vit-base": [
             VitNet(),
@@ -60,7 +63,7 @@ def get_args():
     )
 
     parser.add_argument(
-        "--batch_size", type=int, default=512, help="Batch size [default: 512]"
+        "--batch_size", type=int, default=128, help="Batch size [default: 128]"
     )
 
     parser.add_argument(
@@ -86,8 +89,6 @@ if __name__ == "__main__":
     bins = list(range(0, 55, 5))
     device = get_device()
     args = get_args()
-
-    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
 
