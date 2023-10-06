@@ -149,7 +149,7 @@ if __name__ == "__main__":
 
         info("Sending notification")
 
-        url = f"https://api.telegram.org/bot${token}/sendDocument"
+        url = f"https://api.telegram.org/bot{token}/sendDocument"
         data = {"chat_id": chat_id, "caption": "Finished training"}
         files = {"document": (os.path.basename(logfile), open(logfile, "rb"))}
 
