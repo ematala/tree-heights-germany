@@ -88,11 +88,8 @@ if __name__ == "__main__":
     args = get_args()
 
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    logfile = os.path.join(log_dir, f"{args.model}-{timestamp}.log")
 
-    logging.basicConfig(
-        level=logging.INFO, format="%(asctime)s %(message)s", filename=logfile
-    )
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
 
     seed_everyting(random_state)
 
@@ -155,10 +152,9 @@ if __name__ == "__main__":
 
         info("Sending notification")
 
-        url = f"https://api.telegram.org/bot{token}/sendDocument"
-        data = {"chat_id": chat_id, "caption": "Finished training"}
-        files = {"document": (os.path.basename(logfile), open(logfile, "rb"))}
+        url = f"https://api.telegram.org/bot{token}/sendMessage"
+        data = {"chat_id": chat_id, "text": "Finished training"}
 
-        res = requests.post(url, data=data, files=files)
+        res = requests.post(url, data=data)
 
         info(f"Response status: {res.status_code}")
