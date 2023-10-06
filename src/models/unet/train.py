@@ -21,7 +21,6 @@ if __name__ == "__main__":
     patch_dir = os.getenv("PATCH_DIR")
     results_dir = os.getenv("RESULTS_DIR")
     gedi_file = os.getenv("GEDI_DIR")
-    encoder = "efficientnet-b2"
     random_state = 42
     batch_size = 128
     num_workers = os.cpu_count() // 2
@@ -46,7 +45,7 @@ if __name__ == "__main__":
     )
 
     # Create model
-    model = Unet(encoder).to(device)
+    model = Unet().to(device)
 
     print(f"Learnable params: {model.count_params():,}")
 
@@ -72,5 +71,5 @@ if __name__ == "__main__":
     # Save model
     save(
         model,
-        os.path.join(model_dir, "unet", f"{model.name}-{image_size}-e{epochs}.pt"),
+        os.path.join(model_dir, "unet", f"{model.name}-e{epochs}.pt"),
     )
