@@ -9,7 +9,7 @@ class UnetPlusPlus(SegmentationUnetPlusPlus):
         self,
         encoder_name: str = "efficientnet-b2",
         encoder_depth: int = 5,
-        encoder_weights: str | None = None,
+        encoder_weights: Optional[str] = None,
         decoder_use_batchnorm: bool = True,
         decoder_channels: List[int] = [256, 128, 64, 32, 16],
         decoder_attention_type: Optional[str] = "scse",
