@@ -131,7 +131,7 @@ if __name__ == "__main__":
     epochs = args.epochs
     batch_size = args.batch_size
 
-    info(f"Starting training with {args.model} configuration")
+    info(f"Starting training with {args.model} configuration for {epochs} epochs")
 
     info(f"Using device: {device}")
 
@@ -171,12 +171,12 @@ if __name__ == "__main__":
     info("Training finished.")
 
     # Test model
-    test(model, test_dl, loss, device)
+    score = test(model, test_dl, loss, device)
 
-    info(f"Saving model {model.name}")
+    info(f"Saving model {args.model}")
 
     # Save model
-    save(model, os.path.join(model_dir, f"{args.model}-{model.name}-e{epochs}.pt"))
+    save(model, os.path.join(model_dir, f"{args.model}-{model.name}-{epochs}.pt"))
 
     if args.notify:
         token = os.getenv("TELEGRAM_TOKEN")
@@ -188,7 +188,7 @@ if __name__ == "__main__":
         info("Sending notification")
 
         url = f"https://api.telegram.org/bot{token}/sendMessage"
-        data = {"chat_id": chat_id, "text": "Finished training"}
+        data = {"chat_id": chat_id, "text": f"Finished training\n\nTest score: {score}"}
 
         res = requests.post(url, data=data)
 
