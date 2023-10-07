@@ -22,48 +22,82 @@ from . import (
 )
 
 
+def get_optimizer(model: Module, lr: float) -> Optimizer:
+    if isinstance(model, (Unet, ResidualUnet, UnetPlusPlus)):
+        return SGD(model.parameters(), lr)
+    elif isinstance(model, VitNet):
+        return AdamW(model.parameters(), lr)
+    else:
+        raise ValueError(f"Model type {type(model).__name__} not supported")
+
+
 def get_config(model: str = "unet") -> Tuple[Module, Optimizer]:
     config = {
-        "unet": [
-            Unet(),
-            SGD(Unet().parameters(), 1e-2),
-        ],
-        "u-resnet": [
-            ResidualUnet(),
-            SGD(ResidualUnet().parameters(), 1e-2),
-        ],
-        "u-plusplus": [
-            UnetPlusPlus(),
-            SGD(UnetPlusPlus().parameters(), 1e-2),
-        ],
-        "vit-base": [
-            VitNet(),
-            AdamW(VitNet().parameters(), 1e-4),
-        ],
-        "vit-large": [
-            VitNet(hidden_size=256, intermediate_size=512),
-            AdamW(VitNet().parameters(), 1e-4),
-        ],
+        "unet": {"class": Unet, "params": {}, "lr": 1e-2},
+        "u-resnet": {"class": ResidualUnet, "params": {}, "lr": 1e-2},
+        "u-plusplus": {"class": UnetPlusPlus, "params": {}, "lr": 1e-2},
+        "vit-base": {
+            "class": VitNet,
+            "params": {
+                "num_attention_heads": 8,
+                "hidden_size": 128,
+                "intermediate_size": 512,
+            },
+            "lr": 1e-4,
+        },
+        "vit-medium": {
+            "class": VitNet,
+            "params": {
+                "num_attention_heads": 12,
+                "hidden_size": 192,
+                "intermediate_size": 768,
+            },
+            "lr": 1e-4,
+        },
+        "vit-large": {
+            "class": VitNet,
+            "params": {
+                "num_attention_heads": 16,
+                "hidden_size": 256,
+                "intermediate_size": 1024,
+            },
+            "lr": 1e-4,
+        },
     }
+
     if model not in config:
         raise ValueError(f"Model {model} not supported")
-    return config[model]
+
+    model_info = config[model]
+    model_instance = model_info["class"](**model_info["params"])
+    optimizer_instance = get_optimizer(model_instance, model_info["lr"])
+
+    return model_instance, optimizer_instance
 
 
 def get_args():
-    parser = ArgumentParser(description="Train model")
+    parser = ArgumentParser(
+        description="Train a selected model on predicting tree canopy heights"
+    )
     parser.add_argument(
         "--model",
-        choices=["unet", "u-resnet", "u-plusplus", "vit-base", "vit-large"],
-        default="unet",
-        help="Model type [default: unet]",
+        choices=[
+            "unet",
+            "u-resnet",
+            "u-plusplus",
+            "vit-base",
+            "vit-medium",
+            "vit-large",
+        ],
+        default="vit-medium",
+        help="Model type [default: vit-medium]",
     )
     parser.add_argument(
         "--epochs", type=int, default=25, help="Training epochs [default: 25]"
     )
 
     parser.add_argument(
-        "--batch_size", type=int, default=128, help="Batch size [default: 128]"
+        "--batch_size", type=int, default=64, help="Batch size [default: 64]"
     )
 
     parser.add_argument(

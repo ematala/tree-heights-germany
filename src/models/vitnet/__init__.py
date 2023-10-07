@@ -15,9 +15,9 @@ class VitNet(Module):
         patch_size: int = 16,
         num_channels: int = 5,
         num_hidden_layers: int = 12,
-        num_attention_heads: int = 16,
+        num_attention_heads: int = 8,
         hidden_size: int = 128,
-        intermediate_size: int = 256,
+        intermediate_size: int = 512,
         hidden_dropout_prob: float = 0.1,
         **kwargs: Any,
     ):
