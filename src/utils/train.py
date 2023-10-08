@@ -23,6 +23,19 @@ from . import (
 
 
 def get_optimizer(model: Module, lr: float) -> Optimizer:
+    """
+    Get optimizer for model.
+
+    Args:
+        model (Module): The model to get the optimizer for.
+        lr (float): The learning rate to use for the optimizer.
+
+    Raises:
+        ValueError: If the model type is not supported.
+
+    Returns:
+        Optimizer: The optimizer for the given model.
+    """
     if isinstance(model, (Unet, ResidualUnet, UnetPlusPlus)):
         return SGD(model.parameters(), lr)
     elif isinstance(model, VitNet):
@@ -32,6 +45,17 @@ def get_optimizer(model: Module, lr: float) -> Optimizer:
 
 
 def get_config(model: str = "unet") -> Tuple[Module, Optimizer]:
+    """Get model and optimizer configuration.
+
+    Args:
+        model (str, optional): The model to use. Defaults to "unet".
+
+    Raises:
+        ValueError: If the model is not supported.
+
+    Returns:
+        Tuple[Module, Optimizer]: The model and optimizer instances.
+    """
     config = {
         "unet": {"class": Unet, "params": {}, "lr": 1e-2},
         "u-resnet": {"class": ResidualUnet, "params": {}, "lr": 1e-2},
@@ -76,6 +100,11 @@ def get_config(model: str = "unet") -> Tuple[Module, Optimizer]:
 
 
 def get_args():
+    """Get arguments from command line
+
+    Returns:
+        Namespace: Arguments
+    """
     parser = ArgumentParser(
         description="Train a selected model on predicting tree canopy heights"
     )
@@ -126,6 +155,7 @@ if __name__ == "__main__":
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
 
+    # Set random seed
     seed_everyting(random_state)
 
     epochs = args.epochs
@@ -157,6 +187,7 @@ if __name__ == "__main__":
     # Create scheduler
     scheduler = CosineAnnealingLR(optimizer, epochs)
 
+    # Create writer
     writer = SummaryWriter(log_dir)
 
     # Training loop
