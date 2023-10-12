@@ -1,6 +1,6 @@
-from typing import Callable, Optional
+from typing import Callable, List, Optional, Tuple
 
-from torch import Tensor, no_grad
+from torch import Tensor, isnan, no_grad
 from torch import device as Device
 from torch import load as tload
 from torch import save as tsave
@@ -10,6 +10,8 @@ from torch.optim.lr_scheduler import _LRScheduler as LRScheduler
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
+
+from .loss import loss_by_range
 
 
 def train(
@@ -54,7 +56,8 @@ def test(
     device: Device,
     epoch: Optional[int] = None,
     writer: Optional[SummaryWriter] = None,
-) -> float:
+    bins: Optional[List[int]] = list(range(0, 55, 5)),
+) -> Tuple[float, Tensor, List[Tuple[int, int]]]:
     model.eval()
 
     loss: float = 0
@@ -67,13 +70,22 @@ def test(
 
             loss += criterion(outputs, targets).item()
 
+            losses, ranges = loss_by_range(outputs, targets, bins)
+
     loss /= len(loader)
 
     print(f"Test loss: {loss:>8f}")
+
     if writer and epoch:
         writer.add_scalar("Loss/test", loss, epoch)
+        for i, range in enumerate(ranges):
+            lower, upper = range
+            if not isnan(losses[i]):
+                writer.add_scalar(
+                    f"Loss/test_range_{lower}-{upper}", losses[i].item(), epoch
+                )
 
-    return loss
+    return loss, losses, ranges
 
 
 def load(path: str, device: Device) -> Module:

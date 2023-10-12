@@ -202,7 +202,9 @@ if __name__ == "__main__":
     info("Training finished.")
 
     # Test model
-    score = test(model, test_dl, loss, device)
+    score, losses, ranges = test(model, test_dl, loss, device, bins=bins)
+
+    info(f"Final test score: {score}\nRanges: {ranges}\nLosses: {losses}")
 
     info(f"Saving model {args.model}")
 

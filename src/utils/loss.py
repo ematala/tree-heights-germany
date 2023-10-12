@@ -1,6 +1,6 @@
 from typing import List, Optional, Tuple
 
-from torch import Tensor, zeros, nan
+from torch import Tensor, nan, zeros
 from torch.nn import HuberLoss
 
 
@@ -31,18 +31,18 @@ def loss(
     return fn(outputs, targets)
 
 
-def range_loss(
+def loss_by_range(
     outputs: Tensor,
     targets: Tensor,
-    ranges: List[int] = list(range(0, 55, 5)),
-) -> Tensor:
-    ranges = list(zip(ranges[:-1], ranges[1:]))
+    bins: List[int],
+) -> Tuple[Tensor, List[Tuple[int, int]]]:
+    bins = list(zip(bins[:-1], bins[1:]))
 
-    losses = zeros(len(ranges))
+    losses = zeros(len(bins))
 
-    for i, range in enumerate(ranges):
+    for i, range in enumerate(bins):
         outputs, targets = filter(outputs, targets, range)
 
         losses[i] = loss(outputs, targets) if targets.numel() > 0 else nan
 
-    return losses
+    return losses, bins
