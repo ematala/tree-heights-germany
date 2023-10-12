@@ -32,8 +32,12 @@ def loss(
 
 
 def range_loss(
-    outputs: Tensor, targets: Tensor, ranges: List[Tuple[int, int]]
+    outputs: Tensor,
+    targets: Tensor,
+    ranges: List[int] = list(range(0, 55, 5)),
 ) -> Tensor:
+    ranges = list(zip(ranges[:-1], ranges[1:]))
+
     losses = zeros(len(ranges))
 
     for i, range in enumerate(ranges):

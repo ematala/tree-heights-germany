@@ -1,5 +1,5 @@
 from .dataset import ForestDataset
-from .loss import filter, loss
+from .loss import filter, loss, range_loss
 from .misc import get_device, get_normalized_image, seed_everyting
 from .models import load, save, test, train
 from .pipeline import (
