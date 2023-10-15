@@ -44,7 +44,7 @@ def get_optimizer(model: Module, lr: float) -> Optimizer:
         raise ValueError(f"Model type {type(model).__name__} not supported")
 
 
-def get_config(model: str = "unet") -> Tuple[Module, Optimizer]:
+def get_model_and_optimizer(model: str = "unet") -> Tuple[Module, Optimizer]:
     """Get model and optimizer configuration.
 
     Args:
@@ -151,17 +151,17 @@ if __name__ == "__main__":
     num_workers = os.cpu_count() // 2
     bins = list(range(0, 55, 5))
     device = get_device()
-    args = get_args()
+    config = get_args()
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
 
     # Set random seed
     seed_everyting(random_state)
 
-    epochs = args.epochs
-    batch_size = args.batch_size
+    epochs = config.epochs
+    batch_size = config.batch_size
 
-    info(f"Starting training with {args.model} configuration for {epochs} epochs")
+    info(f"Starting training with {config.model} configuration for {epochs} epochs")
 
     info(f"Using device: {device}")
 
@@ -177,7 +177,7 @@ if __name__ == "__main__":
     )
 
     # Create model and optimizer
-    model, optimizer = get_config(args.model)
+    model, optimizer = get_model_and_optimizer(config.model)
 
     info(f"Learnable params: {model.count_params():,}")
 
@@ -202,16 +202,20 @@ if __name__ == "__main__":
     info("Training finished.")
 
     # Test model
-    score, losses, ranges = test(model, test_dl, loss, device, bins=bins)
+    test_loss, losses_by_range, ranges = test(model, test_dl, loss, device, bins=bins)
 
-    info(f"Final test score: {score}\nRanges: {ranges}\nLosses: {losses}")
+    info(
+        f"Final test loss: {test_loss:>8f}\n"
+        f"Ranges: {bins}\n"
+        f"Losses by range: {losses_by_range}"
+    )
 
-    info(f"Saving model {args.model}")
+    info(f"Saving model {config.model}")
 
     # Save model
-    save(model, os.path.join(model_dir, f"{args.model}-{model.name}-{epochs}.pt"))
+    save(model, os.path.join(model_dir, f"{config.model}-{model.name}-{epochs}.pt"))
 
-    if args.notify:
+    if config.notify:
         token = os.getenv("TELEGRAM_TOKEN")
         chat_id = os.getenv("TELEGRAM_CHAT_ID")
 
@@ -221,7 +225,14 @@ if __name__ == "__main__":
         info("Sending notification")
 
         url = f"https://api.telegram.org/bot{token}/sendMessage"
-        data = {"chat_id": chat_id, "text": f"Finished training\n\nTest score: {score}"}
+        data = {
+            "chat_id": chat_id,
+            "text": (
+                f"Finished training\n"
+                f"Test loss: {test_loss:>8f}\n"
+                f"Losses by range: {losses_by_range}"
+            ),
+        }
 
         res = requests.post(url, data=data)
 

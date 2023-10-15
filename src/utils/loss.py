@@ -34,15 +34,18 @@ def loss(
 def loss_by_range(
     outputs: Tensor,
     targets: Tensor,
-    bins: List[int],
-) -> Tuple[Tensor, List[Tuple[int, int]]]:
-    bins = list(zip(bins[:-1], bins[1:]))
-
+    bins: List[Tuple[int, int]],
+    placeholder: float = nan,
+) -> Tensor:
     losses = zeros(len(bins))
 
-    for i, range in enumerate(bins):
-        outputs, targets = filter(outputs, targets, range)
+    for idx, range in enumerate(bins):
+        filtered_outputs, filtered_targets = filter(outputs, targets, range)
 
-        losses[i] = loss(outputs, targets) if targets.numel() > 0 else nan
+        losses[idx] = (
+            loss(filtered_outputs, filtered_targets)
+            if filtered_targets.numel() > 0
+            else placeholder
+        )
 
-    return losses, bins
+    return losses

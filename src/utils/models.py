@@ -1,6 +1,7 @@
+from logging import info
 from typing import Callable, List, Optional, Tuple
 
-from torch import Tensor, isnan, no_grad
+from torch import Tensor, isnan, no_grad, where, zeros
 from torch import device as Device
 from torch import load as tload
 from torch import save as tsave
@@ -44,7 +45,7 @@ def train(
 
         if batch % 100 == 0:
             loss, current = loss.item(), (batch + 1) * len(inputs)
-            print(f"Train loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
+            info(f"Train loss: {loss:>8f}  [{current:>5d}/{size:>5d}]")
             if writer:
                 writer.add_scalar("Loss/train", loss, epoch * len(loader) + batch)
 
@@ -60,32 +61,39 @@ def test(
 ) -> Tuple[float, Tensor, List[Tuple[int, int]]]:
     model.eval()
 
+    # Create pairwise tuples or ranges from bins
+    bins = list(zip(bins[:-1], bins[1:]))
+
     loss: float = 0
+    losses_by_range: Tensor = zeros(len(bins))
 
     with no_grad():
-        for inputs, targets in loader:
+        for _, (inputs, targets) in enumerate(tqdm(loader, desc="Testing")):
             inputs, targets = inputs.to(device), targets.to(device)
 
             outputs = model(inputs)
 
             loss += criterion(outputs, targets).item()
 
-            losses, ranges = loss_by_range(outputs, targets, bins)
+            batch_loss_by_range = loss_by_range(outputs, targets, bins)
+            losses_by_range += where(isnan(batch_loss_by_range), 0, batch_loss_by_range)
 
     loss /= len(loader)
+    losses_by_range /= len(loader)
 
-    print(f"Test loss: {loss:>8f}")
+    info(f"Test loss: {loss:>8f}\nLosses by range: {losses_by_range.numpy()}")
 
     if writer and epoch:
         writer.add_scalar("Loss/test", loss, epoch)
-        for i, range in enumerate(ranges):
-            lower, upper = range
-            if not isnan(losses[i]):
-                writer.add_scalar(
-                    f"Loss/test_range_{lower}-{upper}", losses[i].item(), epoch
-                )
 
-    return loss, losses, ranges
+        ranges = list(zip(bins[:-1], bins[1:]))
+        for idx, range in enumerate(ranges):
+            lower, upper = range
+            writer.add_scalar(
+                f"Loss/test/range-{lower}-{upper}", losses_by_range[idx].item(), epoch
+            )
+
+    return loss, losses_by_range.numpy(), bins
 
 
 def load(path: str, device: Device) -> Module:
