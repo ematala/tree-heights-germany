@@ -16,3 +16,4 @@ from .plots import (
 )
 from .predictions import get_truth_vs_predicted, predict_image, predict_patch
 from .preprocessing import Preprocessor
+from .stopping import EarlyStopping

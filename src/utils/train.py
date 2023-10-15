@@ -13,6 +13,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 from ..models import ResidualUnet, Unet, UnetPlusPlus, VitNet
 from . import (
+    EarlyStopping,
     get_data,
     get_device,
     loss,
@@ -192,6 +193,9 @@ if __name__ == "__main__":
     # Create writer
     writer = SummaryWriter(log_dir)
 
+    # Create early stopping
+    stopper = EarlyStopping()
+
     # Add model graph to writer
     writer.add_graph(
         model, rand(batch_size, num_channels, image_size, image_size).to(device)
@@ -201,7 +205,11 @@ if __name__ == "__main__":
     for epoch in range(epochs):
         info(f"Epoch {epoch + 1}\n-------------------------------")
         train(model, train_dl, loss, device, epoch, optimizer, scheduler, writer)
-        test(model, val_dl, loss, device, epoch, writer)
+        val_loss, _ = test(model, val_dl, loss, device, epoch, writer)
+        stopper(val_loss)
+        if stopper.stop:
+            info(f"Early stopping at epoch {epoch + 1}")
+            break
 
     # Close writer
     writer.close()
