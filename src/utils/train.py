@@ -124,7 +124,7 @@ def get_args():
         help="Model type [default: vit-medium]",
     )
     parser.add_argument(
-        "--epochs", type=int, default=25, help="Training epochs [default: 25]"
+        "--epochs", type=int, default=50, help="Training epochs [default: 50]"
     )
 
     parser.add_argument(
