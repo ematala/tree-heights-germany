@@ -9,7 +9,10 @@ from .dataset import ForestDataset
 from .preprocessing import Preprocessor
 
 
-def get_normalized_sampling_weights(bins: Series, probs: ndarray) -> ndarray:
+def get_normalized_sampling_weights(
+    bins: Series,
+    probs: ndarray,
+) -> ndarray:
     bins = stack(bins.apply(array))
 
     weights = dot(bins, probs)
@@ -56,7 +59,7 @@ def get_dataloaders(
     sampling_weights: ndarray,
     batch_size: int,
     num_workers,
-) -> Tuple[DataLoader, DataLoader]:
+) -> Tuple[DataLoader, DataLoader, DataLoader]:
     sampler = WeightedRandomSampler(sampling_weights, len(sampling_weights))
 
     return (
@@ -74,7 +77,7 @@ def get_data(
     batch_size: int = 1,
     num_workers: int = 0,
     bins: List[int] = list(range(0, 55, 5)),
-):
+) -> Tuple[DataLoader, DataLoader, DataLoader]:
     # Create preprocessor
     preprocessor = Preprocessor(img_dir, patch_dir, gedi_dir, image_size)
 

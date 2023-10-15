@@ -5,6 +5,7 @@ from logging import info
 from typing import Tuple
 
 import requests
+from torch import rand
 from torch.nn import Module
 from torch.optim import SGD, AdamW, Optimizer
 from torch.optim.lr_scheduler import CosineAnnealingLR
@@ -146,6 +147,7 @@ if __name__ == "__main__":
     patch_dir = os.getenv("PATCH_DIR")
     results_dir = os.getenv("RESULTS_DIR")
     gedi_file = os.getenv("GEDI_DIR")
+    num_channels = 5
     image_size = 256
     random_state = 42
     num_workers = os.cpu_count() // 2
@@ -190,6 +192,11 @@ if __name__ == "__main__":
     # Create writer
     writer = SummaryWriter(log_dir)
 
+    # Add model graph to writer
+    writer.add_graph(
+        model, rand(batch_size, num_channels, image_size, image_size).to(device)
+    )
+
     # Training loop
     for epoch in range(epochs):
         info(f"Epoch {epoch + 1}\n-------------------------------")
@@ -202,12 +209,12 @@ if __name__ == "__main__":
     info("Training finished.")
 
     # Test model
-    test_loss, losses_by_range, ranges = test(model, test_dl, loss, device, bins=bins)
+    test_loss, test_loss_by_range = test(model, test_dl, loss, device, ranges=bins)
 
     info(
         f"Final test loss: {test_loss:>8f}\n"
         f"Ranges: {bins}\n"
-        f"Losses by range: {losses_by_range}"
+        f"Losses by range: {test_loss_by_range}"
     )
 
     info(f"Saving model {config.model}")
@@ -230,7 +237,7 @@ if __name__ == "__main__":
             "text": (
                 f"Finished training\n"
                 f"Test loss: {test_loss:>8f}\n"
-                f"Losses by range: {losses_by_range}"
+                f"Losses by range: {test_loss_by_range}"
             ),
         }
 

@@ -1,7 +1,17 @@
 from logging import info
 from typing import Callable, List, Optional, Tuple
 
-from torch import Tensor, isnan, no_grad, where, zeros
+import matplotlib.pyplot as plt
+from torch import (
+    Tensor,
+    from_numpy,
+    histogram,
+    isnan,
+    no_grad,
+    stack,
+    where,
+    zeros,
+)
 from torch import device as Device
 from torch import load as tload
 from torch import save as tsave
@@ -12,7 +22,7 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
-from .loss import loss_by_range
+from .loss import loss_by_range as range_loss
 
 
 def train(
@@ -25,8 +35,6 @@ def train(
     scheduler: Optional[LRScheduler] = None,
     writer: Optional[SummaryWriter] = None,
 ) -> None:
-    size = len(loader.dataset)
-
     model.train()
 
     for batch, (inputs, targets) in enumerate(tqdm(loader, desc="Training")):
@@ -43,11 +51,8 @@ def train(
         if scheduler:
             scheduler.step()
 
-        if batch % 100 == 0:
-            loss, current = loss.item(), (batch + 1) * len(inputs)
-            info(f"Train loss: {loss:>8f}  [{current:>5d}/{size:>5d}]")
-            if writer:
-                writer.add_scalar("Loss/train", loss, epoch * len(loader) + batch)
+        if batch % 10 == 0 and writer:
+            writer.add_scalar("Loss/train", loss.item(), epoch * len(loader) + batch)
 
 
 def test(
@@ -57,15 +62,15 @@ def test(
     device: Device,
     epoch: Optional[int] = None,
     writer: Optional[SummaryWriter] = None,
-    bins: Optional[List[int]] = list(range(0, 55, 5)),
+    ranges: Optional[List[int]] = list(range(0, 55, 5)),
 ) -> Tuple[float, Tensor, List[Tuple[int, int]]]:
     model.eval()
 
     # Create pairwise tuples or ranges from bins
-    bins = list(zip(bins[:-1], bins[1:]))
+    range_bins = list(zip(ranges[:-1], ranges[1:]))
 
     loss: float = 0
-    losses_by_range: Tensor = zeros(len(bins))
+    loss_by_range: Tensor = zeros(len(range_bins))
 
     with no_grad():
         for _, (inputs, targets) in enumerate(tqdm(loader, desc="Testing")):
@@ -75,25 +80,46 @@ def test(
 
             loss += criterion(outputs, targets).item()
 
-            batch_loss_by_range = loss_by_range(outputs, targets, bins)
-            losses_by_range += where(isnan(batch_loss_by_range), 0, batch_loss_by_range)
+            batch_loss_by_range = range_loss(outputs, targets, range_bins)
+            loss_by_range += where(isnan(batch_loss_by_range), 0, batch_loss_by_range)
 
     loss /= len(loader)
-    losses_by_range /= len(loader)
+    loss_by_range /= len(loader)
 
-    info(f"Test loss: {loss:>8f}\nLosses by range: {losses_by_range.numpy()}")
+    info(f"Test loss: {loss:>8f}\nLosses by range: {loss_by_range.numpy()}")
 
-    if writer and epoch:
+    if writer and epoch is not None:
+        # Add loss to writer
         writer.add_scalar("Loss/test", loss, epoch)
 
-        ranges = list(zip(bins[:-1], bins[1:]))
-        for idx, range in enumerate(ranges):
-            lower, upper = range
+        # Add prediction histogram to writer
+        hist = histogram(outputs.cpu()).hist
+        writer.add_histogram("Stats/predictions", hist, epoch, ranges)
+
+        # Add images to writer
+        writer.add_images(
+            "Plots/images", inputs[:, :3, :, :], epoch, dataformats="NCHW"
+        )
+
+        # Add predictions to writer
+        preds = stack([apply_colormap(output) for output in outputs])
+
+        writer.add_images("Plots/predictions", preds, epoch, dataformats="NHWC")
+
+        # Add losses by range to writer
+        for idx, range_bin in enumerate(range_bins):
+            lower, upper = range_bin
             writer.add_scalar(
-                f"Loss/test/range-{lower}-{upper}", losses_by_range[idx].item(), epoch
+                f"Loss/test/range-{lower}-{upper}",
+                loss_by_range[idx].item(),
+                epoch,
             )
 
-    return loss, losses_by_range.numpy(), bins
+    return loss, loss_by_range.numpy()
+
+
+def apply_colormap(img: Tensor) -> Tensor:
+    return from_numpy(plt.cm.viridis(img.cpu().numpy())[..., :3]).float()
 
 
 def load(path: str, device: Device) -> Module:

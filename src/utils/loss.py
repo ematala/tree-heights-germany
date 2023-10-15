@@ -16,6 +16,8 @@ def filter(
         lower, upper = range
         mask &= (targets >= lower) & (targets < upper)
 
+    outputs, targets, mask = outputs.squeeze(), targets.squeeze(), mask.squeeze()
+
     return outputs[mask], targets[mask]
 
 

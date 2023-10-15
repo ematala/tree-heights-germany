@@ -142,7 +142,9 @@ class Preprocessor:
                             hf.create_dataset("label", data=label)
 
                         self.patches.loc[(image, patch), "labels"] = npsum(label != 0)
-                        self.patches.loc[(image, patch), "bins"] = get_label_bins(label)
+                        self.patches.loc[(image, patch), "bins"] = get_label_bins(
+                            label, self.bins
+                        )
 
         gc.collect()
 

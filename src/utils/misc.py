@@ -13,7 +13,9 @@ from torch.cuda import manual_seed_all as cseed_all
 
 
 def get_window_bounds(
-    idx: int, patch_size: int, image_size: int = 4096
+    idx: int,
+    patch_size: int,
+    image_size: int = 4096,
 ) -> Tuple[int, int, int, int]:
     row = (idx // (image_size // patch_size)) * patch_size
     col = (idx % (image_size // patch_size)) * patch_size
@@ -54,7 +56,9 @@ def get_normalized_image(src) -> ndarray:
 
 
 def get_label_bins(
-    label: ndarray, bins: List[int] = list(range(0, 55, 5)), no_data: float = 0
+    label: ndarray,
+    bins: List[int] = list(range(0, 55, 5)),
+    no_data: float = 0,
 ) -> ndarray:
     count, _ = nphist(label[label != no_data], bins)
     return count
