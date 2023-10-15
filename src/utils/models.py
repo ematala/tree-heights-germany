@@ -63,7 +63,7 @@ def test(
     epoch: Optional[int] = None,
     writer: Optional[SummaryWriter] = None,
     ranges: Optional[List[int]] = list(range(0, 55, 5)),
-) -> Tuple[float, Tensor, List[Tuple[int, int]]]:
+) -> Tuple[float, Tensor]:
     model.eval()
 
     # Create pairwise tuples or ranges from bins
@@ -107,13 +107,14 @@ def test(
         writer.add_images("Plots/predictions", preds, epoch, dataformats="NHWC")
 
         # Add losses by range to writer
-        for idx, range_bin in enumerate(range_bins):
-            lower, upper = range_bin
-            writer.add_scalar(
-                f"Loss/test/range-{lower}-{upper}",
-                loss_by_range[idx].item(),
-                epoch,
-            )
+        writer.add_scalars(
+            "Loss/test",
+            {
+                f"range-{lower}-{upper}": loss.item()
+                for (lower, upper), loss in zip(range_bins, loss_by_range)
+            },
+            epoch,
+        )
 
     return loss, loss_by_range.numpy()
 
