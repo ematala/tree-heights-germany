@@ -36,7 +36,9 @@ def train(
 ) -> None:
     model.train()
 
-    for batch, (inputs, targets) in enumerate(tqdm(loader, desc="Training")):
+    for batch, (inputs, targets) in enumerate(
+        tqdm(loader, f"Training epoch {epoch + 1}")
+    ):
         inputs, targets = inputs.to(device), targets.to(device)
 
         outputs = model(inputs)
@@ -51,7 +53,9 @@ def train(
             scheduler.step()
 
         if batch % 10 == 0 and writer:
-            writer.add_scalar("Loss/train", loss.item(), epoch * len(loader) + batch)
+            writer.add_scalar(
+                "Loss/train/total", loss.item(), epoch * len(loader) + batch
+            )
 
 
 def test(
@@ -72,7 +76,7 @@ def test(
     loss_by_range: Tensor = zeros(len(range_bins))
 
     with no_grad():
-        for _, (inputs, targets) in enumerate(tqdm(loader, desc="Testing")):
+        for _, (inputs, targets) in enumerate(tqdm(loader, "Testing")):
             inputs, targets = inputs.to(device), targets.to(device)
 
             outputs = model(inputs)
@@ -102,14 +106,11 @@ def test(
         writer.add_images("Plots/predictions", preds, epoch, dataformats="NHWC")
 
         # Add losses by range to writer
-        writer.add_scalars(
-            "Loss/test/range",
-            {
-                f"range-{lower}-{upper}": loss.item()
-                for (lower, upper), loss in zip(range_bins, loss_by_range)
-            },
-            epoch,
-        )
+        loss_dict = {
+            f"{lower}-{upper}": loss
+            for (lower, upper), loss in zip(range_bins, loss_by_range.numpy())
+        }
+        writer.add_scalars("Loss/test/range", loss_dict, epoch)
 
     return loss, loss_by_range.numpy()
 
