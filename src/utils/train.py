@@ -244,7 +244,7 @@ if __name__ == "__main__":
         data = {
             "chat_id": chat_id,
             "text": (
-                f"Finished training\n"
+                f"Finished training with {config.model} configuration for {epochs} epochs\n"
                 f"Test loss: {test_loss:>8f}\n"
                 f"Losses by range: {test_loss_by_range}"
             ),
