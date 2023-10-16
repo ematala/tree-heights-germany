@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 from torch import (
     Tensor,
     from_numpy,
-    histogram,
     isnan,
     no_grad,
     stack,
@@ -91,10 +90,6 @@ def test(
     if writer and epoch is not None:
         # Add loss to writer
         writer.add_scalar("Loss/test/total", loss, epoch)
-
-        # Add prediction histogram to writer
-        hist = histogram(outputs.cpu()).hist
-        writer.add_histogram("Stats/predictions", hist, epoch, ranges)
 
         # Add images to writer
         writer.add_images(
