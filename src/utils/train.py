@@ -146,6 +146,20 @@ def get_args():
         help="Teacher model [default: None]",
     )
 
+    parser.add_argument(
+        "--alpha",
+        type=float,
+        default=0.5,
+        help="Alpha for knowledge distillation [default: 0.5]",
+    )
+
+    parser.add_argument(
+        "--patience",
+        type=int,
+        default=10,
+        help="Patience for early stopping [default: 10]",
+    )
+
     return parser.parse_args()
 
 
@@ -159,7 +173,6 @@ if __name__ == "__main__":
     num_channels = 5
     image_size = 256
     random_state = 42
-    alpha = 0.5
     num_workers = os.cpu_count() // 2
     bins = list(range(0, 55, 5))
     device = get_device()
@@ -172,10 +185,12 @@ if __name__ == "__main__":
 
     epochs = config.epochs
     batch_size = config.batch_size
+    alpha = config.alpha
+    patience = config.patience
 
-    info(f"Starting training with {config.model} configuration for {epochs} epochs")
-
-    info(f"Using device: {device}")
+    info(
+        f"Starting training with {config.model} configuration for {epochs} epochs on device {device}"
+    )
 
     # Get data
     train_dl, val_dl, test_dl = get_data(
@@ -210,7 +225,11 @@ if __name__ == "__main__":
     writer = SummaryWriter(log_dir)
 
     # Create early stopping
-    stopper = EarlyStopping()
+    stopper = EarlyStopping(
+        model,
+        os.path.join(model_dir, f"{config.model}-{model.name}.pt"),
+        patience,
+    )
 
     # Add model graph to writer
     writer.add_graph(
@@ -242,7 +261,6 @@ if __name__ == "__main__":
         stopper(val_loss)
         if stopper.stop:
             info(f"Early stopping at epoch {epoch + 1}")
-            epochs = epoch + 1
             break
 
     # Close writer
@@ -258,11 +276,6 @@ if __name__ == "__main__":
         f"Ranges: {bins}\n"
         f"Losses by range: {test_loss_by_range}"
     )
-
-    info(f"Saving model {config.model}")
-
-    # Save model
-    save(model, os.path.join(model_dir, f"{config.model}-{model.name}-{epochs}.pt"))
 
     if config.notify:
         token = os.getenv("TELEGRAM_TOKEN")

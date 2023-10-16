@@ -1,4 +1,7 @@
 from numpy import Inf
+from torch.nn import Module
+
+from .models import save
 
 
 class EarlyStopping:
@@ -6,18 +9,25 @@ class EarlyStopping:
 
     def __init__(
         self,
+        model: Module,
+        path: str,
         patience: int = 10,
         delta: float = 0.0,
     ):
         """
         Args:
+            model (Module): The model to save.
+            model_path (str): Path to save the model.
             patience (int): How long to wait after last time validation loss improved.
                             Default: 5
             delta (float): Minimum change in the monitored quantity to qualify as an improvement.
                            Default: 0.0
         """
+        self.model = model
+        self.path = path
         self.patience = patience
         self.delta = delta
+
         self.best_score = Inf
         self.stop = False
         self.counter = 0
@@ -25,6 +35,7 @@ class EarlyStopping:
     def __call__(self, score: float):
         if self.best_score is None:
             self.best_score = score
+            save(self.model, self.path)
         elif score > self.best_score + self.delta:
             self.counter += 1
             if self.counter >= self.patience:
@@ -32,3 +43,4 @@ class EarlyStopping:
         else:
             self.best_score = score
             self.counter = 0
+            save(self.model, self.path)
