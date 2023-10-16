@@ -21,6 +21,7 @@ from . import (
     seed_everyting,
     test,
     train,
+    load,
 )
 
 
@@ -138,6 +139,13 @@ def get_args():
         help="Notify after training [default: True]",
     )
 
+    parser.add_argument(
+        "--teacher",
+        type=str,
+        default=None,
+        help="Teacher model [default: None]",
+    )
+
     return parser.parse_args()
 
 
@@ -151,6 +159,7 @@ if __name__ == "__main__":
     num_channels = 5
     image_size = 256
     random_state = 42
+    alpha = 0.5
     num_workers = os.cpu_count() // 2
     bins = list(range(0, 55, 5))
     device = get_device()
@@ -187,6 +196,13 @@ if __name__ == "__main__":
     # Move model to device
     model.to(device)
 
+    # Create teacher model
+    teacher = None
+
+    if config.teacher:
+        info(f"Loading teacher model {config.teacher}")
+        teacher = load(os.path.join(model_dir, config.teacher), device)
+
     # Create scheduler
     scheduler = CosineAnnealingLR(optimizer, epochs)
 
@@ -203,9 +219,26 @@ if __name__ == "__main__":
 
     # Training loop
     for epoch in range(epochs):
-        info(f"Epoch {epoch + 1}\n-------------------------------")
-        train(model, train_dl, loss, device, epoch, optimizer, scheduler, writer)
-        val_loss, _ = test(model, val_dl, loss, device, epoch, writer)
+        train(
+            model,
+            train_dl,
+            loss,
+            device,
+            epoch,
+            optimizer,
+            scheduler,
+            writer,
+            teacher,
+            alpha,
+        )
+        val_loss, _ = test(
+            model,
+            val_dl,
+            loss,
+            device,
+            epoch,
+            writer,
+        )
         stopper(val_loss)
         if stopper.stop:
             info(f"Early stopping at epoch {epoch + 1}")

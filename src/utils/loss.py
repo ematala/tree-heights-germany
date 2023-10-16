@@ -26,8 +26,6 @@ def loss(
     targets: Tensor,
     delta: float = 3,
 ) -> Tensor:
-    outputs, targets = filter(outputs, targets)
-
     fn = HuberLoss("mean", delta)
 
     return fn(outputs, targets)

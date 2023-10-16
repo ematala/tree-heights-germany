@@ -21,6 +21,7 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
+from .loss import filter
 from .loss import loss_by_range as range_loss
 
 
@@ -33,6 +34,8 @@ def train(
     optimizer: Optimizer,
     scheduler: Optional[LRScheduler] = None,
     writer: Optional[SummaryWriter] = None,
+    teacher: Optional[Module] = None,
+    alpha: float = 0.5,
 ) -> None:
     model.train()
 
@@ -43,7 +46,13 @@ def train(
 
         outputs = model(inputs)
 
-        loss = criterion(outputs, targets)
+        loss = criterion(*filter(outputs, targets))
+
+        if teacher:
+            with no_grad():
+                teacher_outputs = teacher(inputs)
+
+            loss = (1 - alpha) * loss + alpha * criterion(outputs, teacher_outputs)
 
         loss.backward()
         optimizer.step()
@@ -53,9 +62,8 @@ def train(
             scheduler.step()
 
         if batch % 10 == 0 and writer:
-            writer.add_scalar(
-                "Loss/train/total", loss.item(), epoch * len(loader) + batch
-            )
+            step = epoch * len(loader) + batch
+            writer.add_scalar("Loss/train/total", loss.item(), step)
 
 
 def test(
@@ -81,7 +89,7 @@ def test(
 
             outputs = model(inputs)
 
-            loss += criterion(outputs, targets).item()
+            loss += criterion(*filter(outputs, targets)).item()
 
             batch_loss_by_range = range_loss(outputs, targets, range_bins)
             loss_by_range += where(isnan(batch_loss_by_range), 0, batch_loss_by_range)
