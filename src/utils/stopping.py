@@ -6,7 +6,7 @@ class EarlyStopping:
 
     def __init__(
         self,
-        patience: int = 5,
+        patience: int = 7,
         delta: float = 0.0,
     ):
         """

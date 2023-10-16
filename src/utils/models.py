@@ -90,7 +90,7 @@ def test(
 
     if writer and epoch is not None:
         # Add loss to writer
-        writer.add_scalar("Loss/test", loss, epoch)
+        writer.add_scalar("Loss/test/total", loss, epoch)
 
         # Add prediction histogram to writer
         hist = histogram(outputs.cpu()).hist
@@ -108,7 +108,7 @@ def test(
 
         # Add losses by range to writer
         writer.add_scalars(
-            "Loss/test",
+            "Loss/test/range",
             {
                 f"range-{lower}-{upper}": loss.item()
                 for (lower, upper), loss in zip(range_bins, loss_by_range)
@@ -120,7 +120,10 @@ def test(
 
 
 def apply_colormap(img: Tensor) -> Tensor:
-    return from_numpy(plt.cm.viridis(img.cpu().numpy())[..., :3]).float()
+    min, max = img.min().item(), img.max().item()
+    img = (img.cpu() - min) / (max - min)
+    cmap = plt.cm.viridis(img.numpy())[..., :3]
+    return from_numpy(cmap).float()
 
 
 def load(path: str, device: Device) -> Module:

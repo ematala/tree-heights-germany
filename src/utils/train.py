@@ -209,6 +209,7 @@ if __name__ == "__main__":
         stopper(val_loss)
         if stopper.stop:
             info(f"Early stopping at epoch {epoch + 1}")
+            epochs = epoch + 1
             break
 
     # Close writer
