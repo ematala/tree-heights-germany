@@ -107,7 +107,7 @@ def test(
         # Add images to writer
         writer.add_images(
             "Plots/images",
-            brighten(inputs[:, :3, :, :].numpy()),
+            brighten(inputs[:, :3, :, :].cpu().numpy()),
             epoch,
             dataformats="NCHW",
         )
