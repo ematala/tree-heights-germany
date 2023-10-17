@@ -23,6 +23,7 @@ from tqdm import tqdm
 
 from .loss import filter
 from .loss import loss_by_range as range_loss
+from .plots import brighten
 
 
 def train(
@@ -105,7 +106,10 @@ def test(
 
         # Add images to writer
         writer.add_images(
-            "Plots/images", inputs[:, :3, :, :], epoch, dataformats="NCHW"
+            "Plots/images",
+            brighten(inputs[:, :3, :, :].numpy()),
+            epoch,
+            dataformats="NCHW",
         )
 
         # Add predictions to writer

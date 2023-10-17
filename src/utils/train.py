@@ -17,7 +17,6 @@ from . import (
     get_data,
     get_device,
     loss,
-    save,
     seed_everyting,
     test,
     train,
