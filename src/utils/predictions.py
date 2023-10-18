@@ -4,13 +4,11 @@ from typing import Tuple
 from numpy import float32, ndarray, zeros
 from PIL.Image import fromarray
 from rasterio import open as ropen
-from torch import Tensor, cat, from_numpy, no_grad
+from torch import Tensor, from_numpy, no_grad
 from torch import device as Device
 from torch.nn import Module
-from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from .loss import filter
 from .misc import get_normalized_image, get_window_bounds
 
 
@@ -72,24 +70,3 @@ def predict_image(
 
 def save_prediction(prediction: ndarray, filename: str) -> None:
     fromarray(prediction, mode="F").save(f"{filename}", "TIFF")
-
-
-def get_truth_vs_predicted(
-    model: Module, loader: DataLoader, device: str
-) -> Tuple[Tensor, Tensor]:
-    truth = Tensor().to(device)
-    predicted = Tensor().to(device)
-
-    with no_grad():
-        model.eval()
-        for inputs, targets in tqdm(loader):
-            inputs, targets = inputs.to(device), targets.to(device)
-
-            outputs = model(inputs)
-
-            outputs, targets = filter(outputs, targets)
-
-            truth = cat((truth, targets))
-            predicted = cat((predicted, outputs))
-
-    return truth.cpu().numpy(), predicted.cpu().numpy()

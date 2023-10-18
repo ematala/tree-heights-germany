@@ -1,7 +1,8 @@
 from .dataset import ForestDataset
+from .evaluation import get_truth_vs_predicted
 from .loss import filter, loss, loss_by_range
 from .misc import get_device, get_normalized_image, seed_everyting
-from .models import load, save, test, train
+from .models import load, save, test, train, validate
 from .pipeline import (
     get_data,
     get_dataloaders,
@@ -14,6 +15,6 @@ from .plots import (
     plot_image_channels,
     plot_labels_in_germany,
 )
-from .predictions import get_truth_vs_predicted, predict_image, predict_patch
+from .predictions import predict_image, predict_patch
 from .preprocessing import Preprocessor
 from .stopping import EarlyStopping
