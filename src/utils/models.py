@@ -67,13 +67,72 @@ def train(
             writer.add_scalar("Loss/train/total", loss.item(), step)
 
 
+def validate(
+    model: Module,
+    loader: DataLoader,
+    criterion: Callable[[Tensor, Tensor], Tensor],
+    device: Device,
+    epoch: int,
+    writer: SummaryWriter,
+    ranges: Optional[List[int]] = list(range(0, 55, 5)),
+) -> Tuple[float, Tensor]:
+    model.eval()
+
+    # Create pairwise tuples or ranges from bins
+    range_bins = list(zip(ranges[:-1], ranges[1:]))
+
+    loss: float = 0
+    loss_by_range: Tensor = zeros(len(range_bins))
+
+    with no_grad():
+        for _, (inputs, targets) in enumerate(
+            tqdm(loader, f"Validation epoch {epoch + 1}")
+        ):
+            inputs, targets = inputs.to(device), targets.to(device)
+
+            outputs = model(inputs)
+
+            loss += criterion(*filter(outputs, targets)).item()
+
+            batch_loss_by_range = range_loss(outputs, targets, range_bins)
+            loss_by_range += where(isnan(batch_loss_by_range), 0, batch_loss_by_range)
+
+    loss /= len(loader)
+    loss_by_range /= len(loader)
+
+    info(f"Validation loss: {loss:>8f}\nLosses by range: {loss_by_range.numpy()}")
+
+    # Add loss to writer
+    writer.add_scalar("Loss/test/total", loss, epoch)
+
+    # Add images to writer
+    writer.add_images(
+        "Plots/images",
+        brighten(inputs[:, :3, :, :].cpu().numpy()),
+        epoch,
+        dataformats="NCHW",
+    )
+
+    # Add predictions to writer
+    preds = stack([apply_colormap(output) for output in outputs])
+
+    writer.add_images("Plots/predictions", preds, epoch, dataformats="NHWC")
+
+    # Add losses by range to writer
+    loss_dict = {
+        f"{lower}-{upper}": loss
+        for (lower, upper), loss in zip(range_bins, loss_by_range.numpy())
+    }
+    writer.add_scalars("Loss/test/range", loss_dict, epoch)
+
+    return loss, loss_by_range.numpy()
+
+
 def test(
     model: Module,
     loader: DataLoader,
     criterion: Callable[[Tensor, Tensor], Tensor],
     device: Device,
-    epoch: Optional[int] = None,
-    writer: Optional[SummaryWriter] = None,
     ranges: Optional[List[int]] = list(range(0, 55, 5)),
 ) -> Tuple[float, Tensor]:
     model.eval()
@@ -97,32 +156,6 @@ def test(
 
     loss /= len(loader)
     loss_by_range /= len(loader)
-
-    info(f"Test loss: {loss:>8f}\nLosses by range: {loss_by_range.numpy()}")
-
-    if writer and epoch is not None:
-        # Add loss to writer
-        writer.add_scalar("Loss/test/total", loss, epoch)
-
-        # Add images to writer
-        writer.add_images(
-            "Plots/images",
-            brighten(inputs[:, :3, :, :].cpu().numpy()),
-            epoch,
-            dataformats="NCHW",
-        )
-
-        # Add predictions to writer
-        preds = stack([apply_colormap(output) for output in outputs])
-
-        writer.add_images("Plots/predictions", preds, epoch, dataformats="NHWC")
-
-        # Add losses by range to writer
-        loss_dict = {
-            f"{lower}-{upper}": loss
-            for (lower, upper), loss in zip(range_bins, loss_by_range.numpy())
-        }
-        writer.add_scalars("Loss/test/range", loss_dict, epoch)
 
     return loss, loss_by_range.numpy()
 

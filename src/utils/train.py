@@ -16,11 +16,12 @@ from . import (
     EarlyStopping,
     get_data,
     get_device,
+    load,
     loss,
     seed_everyting,
     test,
     train,
-    load,
+    validate,
 )
 
 
@@ -249,13 +250,14 @@ if __name__ == "__main__":
             teacher,
             alpha,
         )
-        val_loss, _ = test(
+        val_loss, _ = validate(
             model,
             val_dl,
             loss,
             device,
             epoch,
             writer,
+            bins,
         )
         stopper(val_loss)
         if stopper.stop:
@@ -268,7 +270,7 @@ if __name__ == "__main__":
     info("Training finished.")
 
     # Test model
-    test_loss, test_loss_by_range = test(model, test_dl, loss, device, ranges=bins)
+    test_loss, test_loss_by_range = test(model, test_dl, loss, device, bins)
 
     info(
         f"Final test loss: {test_loss:>8f}\n"
