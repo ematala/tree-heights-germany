@@ -9,15 +9,10 @@ from torch.nn import Module
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from . import (
-    get_data,
-    get_device,
-    load,
-    loss,
-    seed_everyting,
-    test,
-)
-from .loss import filter
+from .loss import filter, loss
+from .misc import get_device, seed_everyting
+from .models import load, test
+from .pipeline import get_data
 
 
 def get_args():
