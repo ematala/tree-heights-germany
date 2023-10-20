@@ -169,3 +169,7 @@ data
 
 # logs
 logs
+runs
+
+# compressed archives
+*.zip
