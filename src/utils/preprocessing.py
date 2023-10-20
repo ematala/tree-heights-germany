@@ -177,9 +177,13 @@ class Preprocessor:
         return self
 
 
-if __name__ == "__main__":
+def main():
     Preprocessor(
         img_dir=os.getenv("IMG_DIR"),
         patch_dir=os.getenv("PATCH_DIR"),
         gedi_dir=os.getenv("GEDI_DIR"),
     ).run()
+
+
+if __name__ == "__main__":
+    main()

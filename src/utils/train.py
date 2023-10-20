@@ -163,12 +163,11 @@ def get_args():
     return parser.parse_args()
 
 
-if __name__ == "__main__":
+def main():
     img_dir = os.getenv("IMG_DIR")
     log_dir = os.getenv("LOG_DIR")
     model_dir = os.getenv("MODEL_DIR")
     patch_dir = os.getenv("PATCH_DIR")
-    results_dir = os.getenv("RESULTS_DIR")
     gedi_file = os.getenv("GEDI_DIR")
     num_channels = 5
     image_size = 256
@@ -300,3 +299,7 @@ if __name__ == "__main__":
         res = requests.post(url, data=data)
 
         info(f"Response status: {res.status_code}")
+
+
+if __name__ == "__main__":
+    main()
