@@ -14,7 +14,7 @@ from torch import (
 from torch import device as Device
 from torch import load as tload
 from torch import save as tsave
-from torch.nn import Module
+from torch.nn import L1Loss, Module, MSELoss
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler as LRScheduler
 from torch.utils.data import DataLoader
@@ -76,12 +76,23 @@ def validate(
     writer: SummaryWriter,
     ranges: Optional[List[int]] = list(range(0, 55, 5)),
 ) -> Tuple[float, Tensor]:
+    # Set model to evaluation mode
     model.eval()
 
     # Create pairwise tuples or ranges from bins
     range_bins = list(zip(ranges[:-1], ranges[1:]))
 
+    # Huber loss
     loss: float = 0
+
+    # MAE loss
+    mae_loss: float = 0
+    mae = L1Loss()
+
+    # MSE loss
+    mse_loss: float = 0
+    mse = MSELoss()
+
     loss_by_range: Tensor = zeros(len(range_bins))
 
     with no_grad():
@@ -92,40 +103,57 @@ def validate(
 
             outputs = model(inputs)
 
-            loss += criterion(*filter(outputs, targets)).item()
+            filtered_outputs, filtered_targets = filter(outputs, targets)
+
+            loss += criterion(filtered_outputs, filtered_targets).item()
+            mae_loss += mae(filtered_outputs, filtered_targets).item()
+            mse_loss += mse(filtered_outputs, filtered_targets).item()
 
             batch_loss_by_range = range_loss(outputs, targets, range_bins)
             loss_by_range += where(isnan(batch_loss_by_range), 0, batch_loss_by_range)
 
+    # Average losses
     loss /= len(loader)
+    mae_loss /= len(loader)
+    mse_loss /= len(loader)
     loss_by_range /= len(loader)
 
-    info(f"Validation loss: {loss:>8f}\nLosses by range: {loss_by_range.numpy()}")
-
     # Add loss to writer
-    writer.add_scalar("Loss/test/total", loss, epoch)
+    writer.add_scalar("Loss/val/total", loss, epoch)
+    writer.add_scalar("Loss/val/MAE", mae_loss, epoch)
+    writer.add_scalar("Loss/val/MSE", mse_loss, epoch)
+
+    # Add loss_by_range to writer
+    loss_dict = {
+        f"{lower}-{upper}": loss
+        for (lower, upper), loss in zip(range_bins, loss_by_range.numpy())
+    }
+    writer.add_scalars("Loss/val/range", loss_dict, epoch)
 
     # Add images to writer
-    writer.add_images(
-        "Plots/images",
-        brighten(inputs[:, :3, :, :].cpu().numpy()),
-        epoch,
-        dataformats="NCHW",
-    )
+    # Since the images never change, only add them once
+    if epoch == 0:
+        writer.add_images(
+            "Plots/images",
+            brighten(inputs[:, :3, :, :].cpu().numpy()),
+            epoch,
+            dataformats="NCHW",
+        )
 
     # Add predictions to writer
     preds = stack([apply_colormap(output) for output in outputs])
 
     writer.add_images("Plots/predictions", preds, epoch, dataformats="NHWC")
 
-    # Add losses by range to writer
-    loss_dict = {
-        f"{lower}-{upper}": loss
-        for (lower, upper), loss in zip(range_bins, loss_by_range.numpy())
-    }
-    writer.add_scalars("Loss/test/range", loss_dict, epoch)
+    info(
+        f"Validation epoch {epoch + 1}\n"
+        f"Total loss: {loss:>8f}\n"
+        f"MAE loss: {mae_loss:>8f}\n"
+        f"MSE loss: {mse_loss:>8f}\n"
+        f"Losses by range: {loss_by_range.numpy()}"
+    )
 
-    return loss, loss_by_range.numpy()
+    return loss
 
 
 def test(

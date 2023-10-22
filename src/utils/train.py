@@ -242,7 +242,7 @@ def main():
             teacher,
             alpha,
         )
-        val_loss, _ = validate(
+        val_loss = validate(
             model,
             val_dl,
             loss,
