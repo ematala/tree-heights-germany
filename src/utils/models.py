@@ -1,7 +1,8 @@
 from logging import info
-from typing import Callable, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
 import matplotlib.pyplot as plt
+from numpy import ndarray
 from torch import (
     Tensor,
     from_numpy,
@@ -14,7 +15,7 @@ from torch import (
 from torch import device as Device
 from torch import load as tload
 from torch import save as tsave
-from torch.nn import L1Loss, Module, MSELoss
+from torch.nn import L1Loss, Module, MSELoss, SmoothL1Loss
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler as LRScheduler
 from torch.utils.data import DataLoader
@@ -75,12 +76,13 @@ def validate(
     epoch: int,
     writer: SummaryWriter,
     ranges: Optional[List[int]] = list(range(0, 55, 5)),
-) -> Tuple[float, Tensor]:
+) -> float:
     # Set model to evaluation mode
     model.eval()
 
     # Create pairwise tuples or ranges from bins
     range_bins = list(zip(ranges[:-1], ranges[1:]))
+    loss_by_range: Tensor = zeros(len(range_bins)).to(device)
 
     # Huber loss
     loss: float = 0
@@ -92,8 +94,6 @@ def validate(
     # MSE loss
     mse_loss: float = 0
     mse = MSELoss()
-
-    loss_by_range: Tensor = zeros(len(range_bins))
 
     with no_grad():
         for _, (inputs, targets) in enumerate(
@@ -126,7 +126,7 @@ def validate(
     # Add loss_by_range to writer
     loss_dict = {
         f"{lower}-{upper}": loss
-        for (lower, upper), loss in zip(range_bins, loss_by_range.numpy())
+        for (lower, upper), loss in zip(range_bins, loss_by_range.cpu().numpy())
     }
     writer.add_scalars("Loss/val/range", loss_dict, epoch)
 
@@ -150,7 +150,7 @@ def validate(
         f"Total loss: {loss:>8f}\n"
         f"MAE loss: {mae_loss:>8f}\n"
         f"MSE loss: {mse_loss:>8f}\n"
-        f"Losses by range: {loss_by_range.numpy()}"
+        f"Losses by range: {loss_by_range.cpu().numpy()}"
     )
 
     return loss
@@ -162,14 +162,23 @@ def test(
     criterion: Callable[[Tensor, Tensor], Tensor],
     device: Device,
     ranges: Optional[List[int]] = list(range(0, 55, 5)),
-) -> Tuple[float, Tensor]:
+) -> Tuple[float, float, float, ndarray]:
     model.eval()
 
     # Create pairwise tuples or ranges from bins
     range_bins = list(zip(ranges[:-1], ranges[1:]))
+    loss_by_range: Tensor = zeros(len(range_bins)).to(device)
 
+    # Huber loss
     loss: float = 0
-    loss_by_range: Tensor = zeros(len(range_bins))
+
+    # MAE loss
+    mae_loss: float = 0
+    mae = L1Loss()
+
+    # MSE loss
+    mse_loss: float = 0
+    mse = MSELoss()
 
     with no_grad():
         for _, (inputs, targets) in enumerate(tqdm(loader, "Testing")):
@@ -177,15 +186,22 @@ def test(
 
             outputs = model(inputs)
 
-            loss += criterion(*filter(outputs, targets)).item()
+            filtered_outputs, filtered_targets = filter(outputs, targets)
+
+            loss += criterion(filtered_outputs, filtered_targets).item()
+            mae_loss += mae(filtered_outputs, filtered_targets).item()
+            mse_loss += mse(filtered_outputs, filtered_targets).item()
 
             batch_loss_by_range = range_loss(outputs, targets, range_bins)
             loss_by_range += where(isnan(batch_loss_by_range), 0, batch_loss_by_range)
 
+    # Average losses
     loss /= len(loader)
+    mae_loss /= len(loader)
+    mse_loss /= len(loader)
     loss_by_range /= len(loader)
 
-    return loss, loss_by_range.numpy()
+    return loss, mae_loss, mse_loss, loss_by_range.cpu().numpy()
 
 
 def apply_colormap(img: Tensor) -> Tensor:

@@ -262,10 +262,14 @@ def main():
     info("Training finished.")
 
     # Test model
-    test_loss, test_loss_by_range = test(model, test_dl, loss, device, bins)
+    test_loss, test_mae, test_mse, test_loss_by_range = test(
+        model, test_dl, loss, device, bins
+    )
 
     info(
         f"Final test loss: {test_loss:>8f}\n"
+        f"Final MAE loss: {test_mae:>8f}\n"
+        f"Final MSE loss: {test_mse:>8f}\n"
         f"Ranges: {bins}\n"
         f"Losses by range: {test_loss_by_range}"
     )
