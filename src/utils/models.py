@@ -1,4 +1,5 @@
 from logging import info
+from math import sqrt
 from typing import Callable, Dict, List, Optional, Tuple
 
 import matplotlib.pyplot as plt
@@ -91,8 +92,8 @@ def validate(
     mae_loss: float = 0
     mae = L1Loss()
 
-    # MSE loss
-    mse_loss: float = 0
+    # RMSE loss
+    rmse_loss: float = 0
     mse = MSELoss()
 
     with no_grad():
@@ -107,7 +108,7 @@ def validate(
 
             loss += criterion(filtered_outputs, filtered_targets).item()
             mae_loss += mae(filtered_outputs, filtered_targets).item()
-            mse_loss += mse(filtered_outputs, filtered_targets).item()
+            rmse_loss += sqrt(mse(filtered_outputs, filtered_targets).item())
 
             batch_loss_by_range = range_loss(outputs, targets, range_bins)
             loss_by_range += where(isnan(batch_loss_by_range), 0, batch_loss_by_range)
@@ -115,13 +116,13 @@ def validate(
     # Average losses
     loss /= len(loader)
     mae_loss /= len(loader)
-    mse_loss /= len(loader)
+    rmse_loss /= len(loader)
     loss_by_range /= len(loader)
 
     # Add loss to writer
     writer.add_scalar("Loss/val/total", loss, epoch)
     writer.add_scalar("Loss/val/MAE", mae_loss, epoch)
-    writer.add_scalar("Loss/val/MSE", mse_loss, epoch)
+    writer.add_scalar("Loss/val/RMSE", rmse_loss, epoch)
 
     # Add loss_by_range to writer
     loss_dict = {
@@ -149,7 +150,7 @@ def validate(
         f"Validation epoch {epoch + 1}\n"
         f"Total loss: {loss:>8f}\n"
         f"MAE loss: {mae_loss:>8f}\n"
-        f"MSE loss: {mse_loss:>8f}\n"
+        f"RMSE loss: {rmse_loss:>8f}\n"
         f"Losses by range: {loss_by_range.cpu().numpy()}"
     )
 
@@ -176,8 +177,8 @@ def test(
     mae_loss: float = 0
     mae = L1Loss()
 
-    # MSE loss
-    mse_loss: float = 0
+    # RMSE loss
+    rmse_loss: float = 0
     mse = MSELoss()
 
     with no_grad():
@@ -190,7 +191,7 @@ def test(
 
             loss += criterion(filtered_outputs, filtered_targets).item()
             mae_loss += mae(filtered_outputs, filtered_targets).item()
-            mse_loss += mse(filtered_outputs, filtered_targets).item()
+            rmse_loss += sqrt(mse(filtered_outputs, filtered_targets).item())
 
             batch_loss_by_range = range_loss(outputs, targets, range_bins)
             loss_by_range += where(isnan(batch_loss_by_range), 0, batch_loss_by_range)
@@ -198,10 +199,10 @@ def test(
     # Average losses
     loss /= len(loader)
     mae_loss /= len(loader)
-    mse_loss /= len(loader)
+    rmse_loss /= len(loader)
     loss_by_range /= len(loader)
 
-    return loss, mae_loss, mse_loss, loss_by_range.cpu().numpy()
+    return loss, mae_loss, rmse_loss, loss_by_range.cpu().numpy()
 
 
 def apply_colormap(img: Tensor) -> Tensor:
