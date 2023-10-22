@@ -1,7 +1,7 @@
 from typing import List, Optional, Tuple
 
 from torch import Tensor, nan, zeros
-from torch.nn import HuberLoss
+from torch.nn import SmoothL1Loss
 
 
 def filter(
@@ -26,7 +26,7 @@ def loss(
     targets: Tensor,
     delta: float = 3,
 ) -> Tensor:
-    fn = HuberLoss("mean", delta)
+    fn = SmoothL1Loss(beta=delta)
 
     return fn(outputs, targets)
 
