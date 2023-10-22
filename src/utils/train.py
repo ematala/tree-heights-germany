@@ -7,7 +7,7 @@ from typing import Tuple
 import requests
 from torch import rand
 from torch.nn import Module
-from torch.optim import SGD, AdamW, Optimizer
+from torch.optim import AdamW, Optimizer
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.tensorboard import SummaryWriter
 
@@ -33,22 +33,15 @@ def get_optimizer(model: Module, lr: float) -> Optimizer:
         model (Module): The model to get the optimizer for.
         lr (float): The learning rate to use for the optimizer.
 
-    Raises:
-        ValueError: If the model type is not supported.
-
     Returns:
         Optimizer: The optimizer for the given model.
     """
-    if isinstance(model, (Unet, ResidualUnet, UnetPlusPlus)):
-        return SGD(model.parameters(), lr)
-    elif isinstance(model, VitNet):
-        return AdamW(model.parameters(), lr)
-    else:
-        raise ValueError(f"Model type {type(model).__name__} not supported")
+    return AdamW(model.parameters(), lr)
 
 
-def get_model_and_optimizer(model: str = "unet") -> Tuple[Module, Optimizer]:
-    """Get model and optimizer configuration.
+def get_model_and_optimizer(model: str) -> Tuple[Module, Optimizer]:
+    """
+    Get model and optimizer configuration.
 
     Args:
         model (str, optional): The model to use. Defaults to "unet".
@@ -59,10 +52,13 @@ def get_model_and_optimizer(model: str = "unet") -> Tuple[Module, Optimizer]:
     Returns:
         Tuple[Module, Optimizer]: The model and optimizer instances.
     """
+    # constant lr for all models
+    lr = 1e-4
+
     config = {
-        "unet": {"class": Unet, "params": {}, "lr": 1e-2},
-        "u-resnet": {"class": ResidualUnet, "params": {}, "lr": 1e-2},
-        "u-plusplus": {"class": UnetPlusPlus, "params": {}, "lr": 1e-2},
+        "unet": {"class": Unet, "params": {}},
+        "u-resnet": {"class": ResidualUnet, "params": {}},
+        "u-plusplus": {"class": UnetPlusPlus, "params": {}},
         "vit-base": {
             "class": VitNet,
             "params": {
@@ -70,7 +66,6 @@ def get_model_and_optimizer(model: str = "unet") -> Tuple[Module, Optimizer]:
                 "hidden_size": 128,
                 "intermediate_size": 512,
             },
-            "lr": 1e-4,
         },
         "vit-medium": {
             "class": VitNet,
@@ -79,7 +74,6 @@ def get_model_and_optimizer(model: str = "unet") -> Tuple[Module, Optimizer]:
                 "hidden_size": 192,
                 "intermediate_size": 768,
             },
-            "lr": 1e-4,
         },
         "vit-large": {
             "class": VitNet,
@@ -88,7 +82,6 @@ def get_model_and_optimizer(model: str = "unet") -> Tuple[Module, Optimizer]:
                 "hidden_size": 256,
                 "intermediate_size": 1024,
             },
-            "lr": 1e-4,
         },
     }
 
@@ -97,7 +90,7 @@ def get_model_and_optimizer(model: str = "unet") -> Tuple[Module, Optimizer]:
 
     model_info = config[model]
     model_instance = model_info["class"](**model_info["params"])
-    optimizer_instance = get_optimizer(model_instance, model_info["lr"])
+    optimizer_instance = get_optimizer(model_instance, lr)
 
     return model_instance, optimizer_instance
 
