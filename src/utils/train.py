@@ -198,7 +198,9 @@ def main():
     # Create model and optimizer
     model, optimizer = get_model_and_optimizer(config.model)
 
-    info(f"Learnable params: {model.count_params():,}")
+    num_params = model.count_params()
+
+    info(f"Learnable params: {num_params:,}")
 
     # Move model to device
     model.to(device)
@@ -253,7 +255,8 @@ def main():
         )
         stopper(val_loss)
         if stopper.stop:
-            info(f"Early stopping at epoch {epoch + 1}")
+            trained_epochs = epoch + 1
+            info(f"Early stopping at epoch {trained_epochs}")
             break
 
     # Close writer
@@ -288,7 +291,12 @@ def main():
             "chat_id": chat_id,
             "text": (
                 f"Finished training with {config.model} configuration for {epochs} epochs\n"
-                f"Test loss: {test_loss:>8f}\n"
+                f"Learnable params: {num_params:,}\n"
+                f"Early stopping triggered at epoch {trained_epochs}\n"
+                f"Final test loss: {test_loss:>8f}\n"
+                f"Final MAE loss: {test_mae:>8f}\n"
+                f"Final RMSE loss: {test_rmse:>8f}\n"
+                f"Ranges: {bins}\n"
                 f"Losses by range: {test_loss_by_range}"
             ),
         }
