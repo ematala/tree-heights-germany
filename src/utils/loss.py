@@ -37,7 +37,7 @@ def loss_by_range(
     bins: List[Tuple[int, int]],
     placeholder: float = nan,
 ) -> Tensor:
-    losses = zeros(len(bins))
+    losses = zeros(len(bins)).to(outputs.device)
 
     for idx, range in enumerate(bins):
         filtered_outputs, filtered_targets = filter(outputs, targets, range)
