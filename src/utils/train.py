@@ -230,6 +230,9 @@ def main():
         model, rand(batch_size, num_channels, image_size, image_size).to(device)
     )
 
+    # Initialize trained epochs
+    trained_epochs = 0
+
     # Training loop
     for epoch in range(epochs):
         train(
@@ -253,9 +256,9 @@ def main():
             writer,
             bins,
         )
+        trained_epochs += 1
         stopper(val_loss)
         if stopper.stop:
-            trained_epochs = epoch + 1
             info(f"Early stopping at epoch {trained_epochs}")
             break
 
