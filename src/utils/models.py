@@ -1,6 +1,6 @@
 from logging import info
 from math import sqrt
-from typing import Callable, Dict, List, Optional, Tuple
+from typing import Callable, List, Optional, Tuple
 
 import matplotlib.pyplot as plt
 from numpy import ndarray
@@ -16,7 +16,7 @@ from torch import (
 from torch import device as Device
 from torch import load as tload
 from torch import save as tsave
-from torch.nn import L1Loss, Module, MSELoss, SmoothL1Loss
+from torch.nn import L1Loss, Module, MSELoss
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler as LRScheduler
 from torch.utils.data import DataLoader
