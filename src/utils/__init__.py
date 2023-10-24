@@ -14,6 +14,7 @@ from .plots import (
     plot_image_channels,
     plot_labels_in_germany,
     plot_predictions,
+    plot_true_vs_predicted,
 )
 from .predictions import predict_image, predict_batch
 from .preprocessing import Preprocessor

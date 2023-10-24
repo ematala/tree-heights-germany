@@ -2,7 +2,7 @@ import os
 
 from geopandas import read_file, sjoin
 from matplotlib import pyplot as plt
-from numpy import expand_dims, minimum, ndarray
+from numpy import arange, expand_dims, minimum, ndarray
 from rasterio import open as ropen
 from rasterio.plot import show as rshow
 from torch import Tensor
@@ -16,15 +16,12 @@ def brighten(image: ndarray, factor: float = 5.0) -> ndarray:
 
 
 def plot_image_and_prediction(image: ndarray, prediction: ndarray):
-    """
-    Plots the original image and the prediction side by side.
+    """Plots the original image and the prediction side by side.
 
-    Parameters:
-        - image: The original RGB image.
-        - prediction: The predicted height map.
-        - brighten: A factor to brighten the image. Default is 1.0 (no change).
+    Args:
+        image (ndarray): The original RGB image.
+        prediction (ndarray): The predicted height map.
     """
-
     # Transpose the image and prediction to have channels last
     image = image[:3, :, :].transpose(1, 2, 0)
 
@@ -110,6 +107,16 @@ def plot_predictions(
     predictions: dict,
     nrows: int = 4,
 ) -> None:
+    """Plot predictions for a set of images.
+
+    Args:
+        images (Tensor): The original RGB images.
+        predictions (dict): The predicted height maps.
+        nrows (int, optional): Number of rows to plot. Defaults to 4.
+
+    Raises:
+        ValueError: If the number of rows requested is greater than the number of samples available.
+    """
     total_rows = images.shape[0]
     if total_rows < nrows:
         raise ValueError(
@@ -157,5 +164,43 @@ def plot_predictions(
     fig.colorbar(im, cax=cax, orientation="vertical").set_label(
         "Height (meters)", rotation=-90, va="bottom"
     )
+
+    plt.show()
+
+
+def plot_true_vs_predicted(
+    true_values: ndarray,
+    predicted_values: ndarray,
+    model_name: str,
+) -> None:
+    """
+    Create a scatter plot for true vs predicted values with specific adjustments.
+
+    Parameters:
+    - true_values (np.ndarray): Ground truth values
+    - predicted_values (np.ndarray): Model's predictions
+
+    Raises:
+    - ValueError: If the shapes of true_values and predicted_values do not match.
+    """
+    if true_values.shape != predicted_values.shape:
+        raise ValueError("The shapes of true_values and predicted_values must match.")
+
+    plt.figure(figsize=(10, 10))
+
+    # Scatter plot
+    plt.scatter(true_values, predicted_values, marker="o", edgecolor="k", alpha=0.7)
+
+    # 1:1 line for perfect predictions
+    min_val = min(true_values.min(), predicted_values.min())
+    max_val = max(true_values.max(), predicted_values.max())
+    plt.plot([min_val, max_val], [min_val, max_val], "r--", linewidth=2)
+
+    plt.xlabel("GEDI RH98 (m)", fontsize=14)
+    plt.ylabel(f"{model_name} RH98 (m)", fontsize=14)
+
+    ticks = arange(0, max_val, 5)
+    plt.xticks(ticks)
+    plt.yticks(ticks)
 
     plt.show()
