@@ -262,7 +262,7 @@ def main():
     info("Training finished.")
 
     # Test model
-    test_loss, test_mae, test_rmse, test_loss_by_range = test(
+    test_loss, test_mae, test_rmse, test_loss_by_range, _, _ = test(
         model, test_dl, loss, device, bins
     )
 

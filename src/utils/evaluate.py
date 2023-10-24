@@ -1,0 +1,108 @@
+import logging
+import os
+from argparse import ArgumentParser
+
+from pandas import DataFrame
+
+from .loss import loss
+from .misc import get_device, seed_everyting
+from .models import load, test
+from .pipeline import get_data
+
+
+def get_args():
+    """Get arguments from command line
+
+    Returns:
+        Namespace: Arguments
+    """
+    parser = ArgumentParser(
+        description="Evaluate a model suite on predicting tree canopy heights"
+    )
+    parser.add_argument(
+        "--batch_size",
+        type=int,
+        default=128,
+        help="Batch size [default: 128]",
+    )
+    parser.add_argument(
+        "--filename",
+        type=str,
+        default="evaluation.csv",
+        help="Filename for the evaluation results [default: evaluation.csv]",
+    )
+    return parser.parse_args()
+
+
+def main():
+    img_dir = os.getenv("IMG_DIR")
+    model_dir = os.getenv("MODEL_DIR")
+    patch_dir = os.getenv("PATCH_DIR")
+    results_dir = os.getenv("RESULTS_DIR")
+    gedi_dir = os.getenv("GEDI_DIR")
+    image_size = 256
+    random_state = 42
+    num_workers = os.cpu_count() // 2
+    bins = list(range(0, 55, 5))
+    device = get_device()
+    config = get_args()
+
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
+
+    # Set random seed
+    seed_everyting(random_state)
+
+    batch_size = config.batch_size
+    results_filename = config.filename
+
+    # Get data
+    _, _, test_dl = get_data(
+        img_dir,
+        patch_dir,
+        gedi_dir,
+        image_size,
+        batch_size,
+        num_workers,
+        bins,
+    )
+
+    # Load all model files
+    model_files = [f for f in os.listdir(model_dir) if f.endswith(".pt")]
+
+    # Load all models
+    models = {
+        model_file[: -len(".pt")]: load(os.path.join(model_dir, model_file), device)
+        for model_file in model_files
+    }
+
+    # Initialize results DataFrame
+    results = DataFrame(columns=["Test Loss", "MAE", "RMSE", "Test Loss By Range"])
+
+    # Test each model
+    for model_name, model in models.items():
+        logging.info(f"Testing model {model_name}")
+        (
+            test_loss,
+            test_mae,
+            test_rmse,
+            test_loss_by_range,
+            _,
+            _,
+        ) = test(model, test_dl, loss, device, bins)
+
+        results.loc[model_name] = [test_loss, test_mae, test_rmse, test_loss_by_range]
+
+        logging.info(
+            f"Test loss: {test_loss:>8f}\n"
+            f"MAE: {test_mae:>8f}\n"
+            f"RMSE: {test_rmse:>8f}\n"
+            f"Ranges: {bins}\n"
+            f"Losses by range: {test_loss_by_range}"
+        )
+
+    # Save results
+    results.to_csv(os.path.join(results_dir, results_filename), sep=";")
+
+
+if __name__ == "__main__":
+    main()

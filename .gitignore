@@ -173,3 +173,6 @@ runs
 
 # compressed archives
 *.zip
+
+# results
+results

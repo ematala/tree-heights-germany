@@ -1,5 +1,4 @@
 from .dataset import ForestDataset
-from .evaluation import get_truth_vs_predicted
 from .loss import filter, loss, loss_by_range
 from .misc import get_device, get_normalized_image, seed_everyting
 from .models import load, save, test, train, validate

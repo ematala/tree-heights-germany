@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from numpy import ndarray
 from torch import (
     Tensor,
+    cat,
     from_numpy,
     isnan,
     no_grad,
@@ -163,7 +164,7 @@ def test(
     criterion: Callable[[Tensor, Tensor], Tensor],
     device: Device,
     ranges: Optional[List[int]] = list(range(0, 55, 5)),
-) -> Tuple[float, float, float, ndarray]:
+) -> Tuple[float, float, float, ndarray, ndarray, ndarray]:
     model.eval()
 
     # Create pairwise tuples or ranges from bins
@@ -181,6 +182,10 @@ def test(
     rmse_loss: float = 0
     mse = MSELoss()
 
+    # Initialize arrays to hold targets and predictions
+    all_targets = []
+    all_predictions = []
+
     with no_grad():
         for _, (inputs, targets) in enumerate(tqdm(loader, "Testing")):
             inputs, targets = inputs.to(device), targets.to(device)
@@ -188,6 +193,9 @@ def test(
             outputs = model(inputs)
 
             filtered_outputs, filtered_targets = filter(outputs, targets)
+
+            all_targets.append(filtered_targets.cpu())
+            all_predictions.append(filtered_outputs.cpu())
 
             loss += criterion(filtered_outputs, filtered_targets).item()
             mae_loss += mae(filtered_outputs, filtered_targets).item()
@@ -202,7 +210,14 @@ def test(
     rmse_loss /= len(loader)
     loss_by_range /= len(loader)
 
-    return loss, mae_loss, rmse_loss, loss_by_range.cpu().numpy()
+    return (
+        loss,
+        mae_loss,
+        rmse_loss,
+        loss_by_range.cpu().numpy(),
+        cat(all_targets).cpu().numpy(),
+        cat(all_predictions).cpu().numpy(),
+    )
 
 
 def apply_colormap(img: Tensor) -> Tensor:
