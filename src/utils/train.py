@@ -161,7 +161,7 @@ def main():
     log_dir = os.getenv("LOG_DIR")
     model_dir = os.getenv("MODEL_DIR")
     patch_dir = os.getenv("PATCH_DIR")
-    gedi_file = os.getenv("GEDI_DIR")
+    gedi_dir = os.getenv("GEDI_DIR")
     num_channels = 5
     image_size = 256
     random_state = 42
@@ -188,7 +188,7 @@ def main():
     train_dl, val_dl, test_dl = get_data(
         img_dir,
         patch_dir,
-        gedi_file,
+        gedi_dir,
         image_size,
         batch_size,
         num_workers,

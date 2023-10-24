@@ -14,7 +14,8 @@ from .plots import (
     plot_image_and_prediction,
     plot_image_channels,
     plot_labels_in_germany,
+    plot_predictions,
 )
-from .predictions import predict_image, predict_patch
+from .predictions import predict_image, predict_batch
 from .preprocessing import Preprocessor
 from .stopping import EarlyStopping
