@@ -1,10 +1,11 @@
 import os
 
 from geopandas import read_file, sjoin
-from matplotlib.pyplot import figure, show, subplots
-from numpy import minimum, ndarray
+from matplotlib import pyplot as plt
+from numpy import expand_dims, minimum, ndarray
 from rasterio import open as ropen
 from rasterio.plot import show as rshow
+from torch import Tensor
 
 from .misc import get_normalized_image
 from .preprocessing import Preprocessor
@@ -31,7 +32,7 @@ def plot_image_and_prediction(image: ndarray, prediction: ndarray):
     image = brighten(image)
 
     # Create a custom grid for the image, prediction, and colorbar
-    fig = figure(figsize=(14, 6))
+    fig = plt.figure(figsize=(14, 6))
     ax1 = fig.add_axes([0.05, 0.1, 0.45, 0.8])
     ax2 = fig.add_axes([0.51, 0.1, 0.45, 0.8])
     cax = fig.add_axes([0.97, 0.1, 0.01, 0.8])
@@ -51,7 +52,7 @@ def plot_image_and_prediction(image: ndarray, prediction: ndarray):
         "Height (meters)", rotation=-90, va="bottom"
     )
 
-    show()
+    plt.show()
 
 
 def plot_image_channels(image: str) -> None:
@@ -62,7 +63,7 @@ def plot_image_channels(image: str) -> None:
 
         rgb, red, green, blue = [brighten(c) for c in [img[:3], red, green, blue]]
 
-        _, (axrgb, axr, axg, axb, axnir, axndvi) = subplots(1, 6, figsize=(31, 7))
+        _, (axrgb, axr, axg, axb, axnir, axndvi) = plt.subplots(1, 6, figsize=(31, 7))
 
         rshow(rgb, ax=axrgb, title="RGB", vmin=0, vmax=1)
         rshow(red, ax=axr, cmap="Reds", title="Red", vmin=0, vmax=1)
@@ -74,7 +75,7 @@ def plot_image_channels(image: str) -> None:
         for ax in [axr, axg, axb, axnir, axndvi, axrgb]:
             ax.axis("off")
 
-        show()
+        plt.show()
 
 
 def plot_labels_in_germany(shapefile: str = "data/germany/germany.geojson") -> None:
@@ -89,7 +90,7 @@ def plot_labels_in_germany(shapefile: str = "data/germany/germany.geojson") -> N
 
     gedi_germany = sjoin(gedi, germany, how="inner", op="within")
 
-    fig, ax = subplots(figsize=(10, 10))
+    fig, ax = plt.subplots(figsize=(10, 10))
 
     gedi_germany.plot(
         cmap="viridis",
@@ -101,4 +102,60 @@ def plot_labels_in_germany(shapefile: str = "data/germany/germany.geojson") -> N
     ax.set_aspect("equal", "box")
     ax.set_axis_off()
 
-    show()
+    plt.show()
+
+
+def plot_predictions(
+    images: Tensor,
+    predictions: dict,
+    nrows: int = 4,
+) -> None:
+    total_rows = images.shape[0]
+    if total_rows < nrows:
+        raise ValueError(
+            f"Requested {nrows} rows, but only {total_rows} samples available."
+        )
+
+    for model_name, preds in predictions.items():
+        if total_rows != preds.shape[0]:
+            raise ValueError(
+                f"Dimension mismatch: {total_rows} original images but {preds.shape[0]} predictions for {model_name}"
+            )
+
+    ncols = len(predictions) + 1
+    fig, axes = plt.subplots(
+        nrows=nrows,
+        ncols=ncols,
+        figsize=(4 * ncols, 4 * nrows),
+    )
+
+    fig.subplots_adjust(right=0.85, wspace=0.1, hspace=0.1)
+
+    if nrows == 1:
+        axes = expand_dims(axes, axis=0)
+
+    for i in range(nrows):
+        image = images[i, :3, :, :].permute(1, 2, 0).numpy()
+
+        image = brighten(image)
+
+        axes[i, 0].imshow(image)
+        axes[i, 0].axis("off")
+        if i == 0:
+            axes[i, 0].set_title("RGB Image")
+
+        col = 1
+        for model_name, preds in predictions.items():
+            pred = preds[i].squeeze().numpy()
+            im = axes[i, col].imshow(pred, cmap="viridis")
+            axes[i, col].axis("off")
+            if i == 0:
+                axes[i, col].set_title(model_name)
+            col += 1
+
+    cax = fig.add_axes([0.88, 0.1, 0.01, 0.8])
+    fig.colorbar(im, cax=cax, orientation="vertical").set_label(
+        "Height (meters)", rotation=-90, va="bottom"
+    )
+
+    plt.show()
