@@ -102,8 +102,8 @@ def get_args():
         "--model",
         choices=[
             "unet",
-            "u-resnet",
-            "u-plusplus",
+            "uresnet",
+            "uplusplus",
             "vit-base",
             "vit-medium",
             "vit-large",
@@ -210,14 +210,10 @@ def main():
     scheduler = CosineAnnealingLR(optimizer, epochs)
 
     # Create writer
-    writer = SummaryWriter(log_dir)
+    writer = SummaryWriter(f"{log_dir}/{config.model}")
 
     # Create early stopping
-    stopper = EarlyStopping(
-        model,
-        os.path.join(model_dir, f"{config.model}-{model.name}.pt"),
-        patience,
-    )
+    stopper = EarlyStopping(model, model_dir, config.model, patience)
 
     # Add model graph to writer
     writer.add_graph(

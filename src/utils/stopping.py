@@ -1,3 +1,5 @@
+import os
+
 from numpy import Inf
 from torch.nn import Module
 
@@ -10,7 +12,8 @@ class EarlyStopping:
     def __init__(
         self,
         model: Module,
-        path: str,
+        model_dir: str,
+        model_name: str,
         patience: int = 10,
         delta: float = 0.0,
     ):
@@ -24,7 +27,7 @@ class EarlyStopping:
                            Default: 0.0
         """
         self.model = model
-        self.path = path
+        self.path = os.path.join(model_dir, f"{model_name}.pt")
         self.patience = patience
         self.delta = delta
 
