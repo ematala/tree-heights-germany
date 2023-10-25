@@ -83,7 +83,7 @@ def plot_labels_in_germany(shapefile: str = "data/germany/germany.geojson") -> N
 
     germany = read_file(os.path.join(shapefile)).to_crs("EPSG:3857")
 
-    gedi = gedi[(gedi.rh98 > 3) & (gedi.rh98 < 50)]
+    gedi = gedi[(gedi.rh98 > 0) & (gedi.rh98 <= 50)]
 
     gedi_germany = sjoin(gedi, germany, how="inner", op="within")
 
@@ -168,7 +168,7 @@ def plot_predictions(
     plt.show()
 
 
-def plot_true_vs_predicted(
+def plot_true_vs_predicted_scatter(
     true_values: ndarray,
     predicted_values: ndarray,
     model_name: str,
@@ -176,12 +176,13 @@ def plot_true_vs_predicted(
     """
     Create a scatter plot for true vs predicted values with specific adjustments.
 
-    Parameters:
-    - true_values (np.ndarray): Ground truth values
-    - predicted_values (np.ndarray): Model's predictions
+    Args:
+        true_values (np.ndarray): Ground truth values
+        predicted_values (np.ndarray): Model's predictions
+        model_name (str): Name of the model
 
     Raises:
-    - ValueError: If the shapes of true_values and predicted_values do not match.
+        ValueError: If the shapes of true_values and predicted_values do not match.
     """
     if true_values.shape != predicted_values.shape:
         raise ValueError("The shapes of true_values and predicted_values must match.")
@@ -202,4 +203,70 @@ def plot_true_vs_predicted(
     plt.xticks(ticks)
     plt.yticks(ticks)
 
+    plt.show()
+
+
+def plot_true_vs_predicted_histogram(
+    true_labels: ndarray,
+    predicted_values: ndarray,
+    model_name: str,
+    bins=range(50),
+) -> None:
+    """
+    Plot a histogram of the true and predicted values.
+
+    Args:
+        true_labels (ndarray): Ground truth values.
+        predicted_values (ndarray): Model's predictions.
+        model_name (str): Name of the model.
+        bins (_type_, optional): Bins for the histogram. Defaults to range(50).
+    """
+    range_tuples = [(i, i + 5) for i in list(range(0, 50, 5))]
+    positions = [(start + end) / 2 for start, end in range_tuples]
+    errors = predicted_values - true_labels
+    boxes = [
+        errors[(true_labels >= start) & (true_labels < end)]
+        for start, end in range_tuples
+    ]
+
+    fig, ax = plt.subplots(figsize=(16, 9))
+    ax2 = ax.twinx()
+
+    ax.hist(
+        true_labels,
+        bins=bins,
+        color="lightgrey",
+        label="GEDI RH98",
+    )
+    ax.hist(
+        predicted_values,
+        bins=bins,
+        histtype="step",
+        edgecolor="black",
+        label=f"{model_name}",
+        linewidth=1,
+    )
+
+    ax2.boxplot(
+        boxes,
+        positions=positions,
+        vert=True,
+        widths=0.5,
+        whis=[5, 95],
+        patch_artist=True,
+        showfliers=False,
+        boxprops=dict(facecolor="black", edgecolor="black"),
+        medianprops=dict(color="lightgrey"),
+    )
+
+    ax2.axhline(y=0, color="grey", linestyle="--")
+
+    ax.set_xticks(positions)
+    ax.set_xticklabels([f"{start}-{end}m" for start, end in range_tuples], fontsize=10)
+    ax.set_xlabel("Height (m)", fontsize=14)
+    ax.set_ylabel("Count", fontsize=14)
+    ax2.set_ylabel("Error (m)", fontsize=14)
+    ax.legend(loc="upper right")
+
+    plt.tight_layout()
     plt.show()
