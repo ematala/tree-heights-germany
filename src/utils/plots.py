@@ -36,7 +36,7 @@ def plot_image_and_prediction(image: ndarray, prediction: ndarray):
 
     # Plot the original image
     ax1.imshow(image)
-    ax1.set_title("Original Image")
+    ax1.set_title("RGB Image")
     ax1.axis("off")
 
     # Plot the prediction
@@ -188,8 +188,7 @@ def plot_true_vs_predicted(
 
     plt.figure(figsize=(10, 10))
 
-    # Scatter plot
-    plt.scatter(true_values, predicted_values, marker="o", edgecolor="k", alpha=0.7)
+    plt.scatter(true_values, predicted_values, marker="o", alpha=0.6)
 
     # 1:1 line for perfect predictions
     min_val = min(true_values.min(), predicted_values.min())

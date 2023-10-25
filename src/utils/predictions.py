@@ -4,7 +4,7 @@ from typing import Dict, Tuple
 from numpy import float32, ndarray, zeros
 from PIL.Image import fromarray
 from rasterio import open as ropen
-from torch import Tensor, cat, from_numpy, no_grad
+from torch import Tensor, from_numpy, no_grad
 from torch import device as Device
 from torch.nn import Module
 from torch.utils.data import DataLoader
@@ -78,22 +78,17 @@ def predict_batch(
     loader: DataLoader,
     device: Device,
 ) -> Tuple[Tensor, Dict[str, Tensor]]:
-    predictions = {model_name: [] for model_name in models.keys()}
-    images = []
+    predictions = {}
 
-    for inputs, _ in loader:
-        images.append(inputs)
+    inputs, _ = next(iter(loader))
 
-        for model_name, model in models.items():
-            model.to(device)
-            model.eval()
-            with no_grad():
-                outputs = model(inputs.to(device))
-            predictions[model_name].append(outputs.cpu())
+    for model_name, model in models.items():
+        model.to(device)
+        model.eval()
 
-    for key in predictions.keys():
-        predictions[key] = cat(predictions[key], dim=0)
+        with no_grad():
+            outputs = model(inputs.to(device))
 
-    images = cat(images, dim=0)
+        predictions[model_name] = outputs.cpu()
 
-    return images, predictions
+    return inputs, predictions
