@@ -51,8 +51,8 @@ def get_model_and_optimizer(model: str) -> Tuple[Module, Optimizer]:
 
     config = {
         "unet": {"class": Unet, "params": {}},
-        "u-resnet": {"class": ResidualUnet, "params": {}},
-        "u-plusplus": {"class": UnetPlusPlus, "params": {}},
+        "uresnet": {"class": ResidualUnet, "params": {}},
+        "uplusplus": {"class": UnetPlusPlus, "params": {}},
         "vit-base": {
             "class": VitNet,
             "params": {
