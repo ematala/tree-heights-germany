@@ -133,8 +133,8 @@ def plot_labels_in_germany(
 def plot_predictions(
     images: Tensor,
     predictions: dict,
-    nrows: int = 4,
     path: Optional[str] = None,
+    nrows: int = 4,
 ) -> None:
     """Plot predictions for a set of images.
 
@@ -240,8 +240,8 @@ def plot_true_vs_predicted_histogram(
     true_labels: ndarray,
     predicted_values: ndarray,
     model_name: str,
-    bins=range(50),
     path: Optional[str] = None,
+    bins=range(50),
 ) -> None:
     """
     Plot a histogram of the true and predicted values.

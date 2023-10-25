@@ -8,6 +8,12 @@ from .loss import loss
 from .misc import get_device, seed_everyting
 from .models import load, test
 from .pipeline import get_data
+from .plots import (
+    plot_predictions,
+    plot_true_vs_predicted_histogram,
+    plot_true_vs_predicted_scatter,
+)
+from .predictions import predict_batch
 
 
 def get_args():
@@ -66,13 +72,10 @@ def main():
         bins,
     )
 
-    # Load all model files
-    model_files = [f for f in os.listdir(model_dir) if f.endswith(".pt")]
-
     # Load all models
     models = {
-        model_file[: -len(".pt")]: load(os.path.join(model_dir, model_file), device)
-        for model_file in model_files
+        filename[: -len(".pt")]: load(os.path.join(model_dir, filename), device)
+        for filename in [f for f in os.listdir(model_dir) if f.endswith(".pt")]
     }
 
     # Initialize results DataFrame
@@ -86,8 +89,8 @@ def main():
             test_mae,
             test_rmse,
             test_loss_by_range,
-            _,
-            _,
+            labels,
+            predictions,
         ) = test(model, test_dl, loss, device, bins)
 
         results.loc[model_name] = [test_loss, test_mae, test_rmse, test_loss_by_range]
@@ -99,6 +102,25 @@ def main():
             f"Ranges: {bins}\n"
             f"Losses by range: {test_loss_by_range}"
         )
+
+        plot_true_vs_predicted_histogram(
+            labels,
+            predictions,
+            model_name,
+            os.path.join(results_dir, f"{model_name}-histogram.svg"),
+        )
+
+        plot_true_vs_predicted_scatter(
+            labels,
+            predictions,
+            model_name,
+            os.path.join(results_dir, f"{model_name}-scatter.svg"),
+        )
+
+    plot_predictions(
+        *predict_batch(models, test_dl, device),
+        os.path.join(results_dir, "patches.svg"),
+    )
 
     # Save results
     results.to_csv(os.path.join(results_dir, results_filename), sep=";")
