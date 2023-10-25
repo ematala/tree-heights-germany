@@ -26,7 +26,7 @@ from tqdm import tqdm
 
 from .loss import filter
 from .loss import loss_by_range as range_loss
-from .plots import brighten
+from .plots import brighten_image
 
 
 def train(
@@ -137,7 +137,7 @@ def validate(
     if epoch == 0:
         writer.add_images(
             "Plots/images",
-            brighten(inputs[:, :3, :, :].cpu().numpy()),
+            brighten_image(inputs[:, :3, :, :].cpu().numpy()),
             epoch,
             dataformats="NCHW",
         )

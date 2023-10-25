@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 
 from geopandas import read_file, sjoin
 from matplotlib import pyplot as plt
@@ -10,12 +11,33 @@ from torch import Tensor
 from .misc import get_normalized_image
 from .preprocessing import Preprocessor
 
+CONFIG = {
+    "format": "svg",
+    "dpi": 300,
+    "bbox_inches": "tight",
+    "pad_inches": 0.1,
+    "transparent": True,
+}
 
-def brighten(image: ndarray, factor: float = 5.0) -> ndarray:
+
+def save_or_show_plot(path: Optional[str] = None) -> None:
+    """Save or show the current plot.
+
+    Args:
+        path (str, optional): Path to save the plot. Defaults to None.
+    """
+    plt.savefig(path, **CONFIG) if path else plt.show()
+
+
+def brighten_image(image: ndarray, factor: float = 5.0) -> ndarray:
     return minimum(image * factor, 1)
 
 
-def plot_image_and_prediction(image: ndarray, prediction: ndarray):
+def plot_image_and_prediction(
+    image: ndarray,
+    prediction: ndarray,
+    path: Optional[str] = None,
+):
     """Plots the original image and the prediction side by side.
 
     Args:
@@ -26,7 +48,7 @@ def plot_image_and_prediction(image: ndarray, prediction: ndarray):
     image = image[:3, :, :].transpose(1, 2, 0)
 
     # Brighten the image using the simplified method
-    image = brighten(image)
+    image = brighten_image(image)
 
     # Create a custom grid for the image, prediction, and colorbar
     fig = plt.figure(figsize=(14, 6))
@@ -49,16 +71,19 @@ def plot_image_and_prediction(image: ndarray, prediction: ndarray):
         "Height (meters)", rotation=-90, va="bottom"
     )
 
-    plt.show()
+    save_or_show_plot(path)
 
 
-def plot_image_channels(image: str) -> None:
+def plot_image_channels(
+    image: str,
+    path: Optional[str] = None,
+) -> None:
     with ropen(os.path.join(image)) as src:
         img = get_normalized_image(src)
 
         red, green, blue, nir, ndvi = img
 
-        rgb, red, green, blue = [brighten(c) for c in [img[:3], red, green, blue]]
+        rgb, red, green, blue = [brighten_image(c) for c in [img[:3], red, green, blue]]
 
         _, (axrgb, axr, axg, axb, axnir, axndvi) = plt.subplots(1, 6, figsize=(31, 7))
 
@@ -72,10 +97,13 @@ def plot_image_channels(image: str) -> None:
         for ax in [axr, axg, axb, axnir, axndvi, axrgb]:
             ax.axis("off")
 
-        plt.show()
+        save_or_show_plot(path)
 
 
-def plot_labels_in_germany(shapefile: str = "data/germany/germany.geojson") -> None:
+def plot_labels_in_germany(
+    shapefile: str = "data/germany/germany.geojson",
+    path: Optional[str] = None,
+) -> None:
     preprocessor = Preprocessor()
     preprocessor._load_gedi()
 
@@ -99,13 +127,14 @@ def plot_labels_in_germany(shapefile: str = "data/germany/germany.geojson") -> N
     ax.set_aspect("equal", "box")
     ax.set_axis_off()
 
-    plt.show()
+    save_or_show_plot(path)
 
 
 def plot_predictions(
     images: Tensor,
     predictions: dict,
     nrows: int = 4,
+    path: Optional[str] = None,
 ) -> None:
     """Plot predictions for a set of images.
 
@@ -144,7 +173,7 @@ def plot_predictions(
     for i in range(nrows):
         image = images[i, :3, :, :].permute(1, 2, 0).numpy()
 
-        image = brighten(image)
+        image = brighten_image(image)
 
         axes[i, 0].imshow(image)
         axes[i, 0].axis("off")
@@ -165,13 +194,14 @@ def plot_predictions(
         "Height (meters)", rotation=-90, va="bottom"
     )
 
-    plt.show()
+    save_or_show_plot(path)
 
 
 def plot_true_vs_predicted_scatter(
     true_values: ndarray,
     predicted_values: ndarray,
     model_name: str,
+    path: Optional[str] = None,
 ) -> None:
     """
     Create a scatter plot for true vs predicted values with specific adjustments.
@@ -203,7 +233,7 @@ def plot_true_vs_predicted_scatter(
     plt.xticks(ticks)
     plt.yticks(ticks)
 
-    plt.show()
+    save_or_show_plot(path)
 
 
 def plot_true_vs_predicted_histogram(
@@ -211,6 +241,7 @@ def plot_true_vs_predicted_histogram(
     predicted_values: ndarray,
     model_name: str,
     bins=range(50),
+    path: Optional[str] = None,
 ) -> None:
     """
     Plot a histogram of the true and predicted values.
@@ -269,4 +300,5 @@ def plot_true_vs_predicted_histogram(
     ax.legend(loc="upper right")
 
     plt.tight_layout()
-    plt.show()
+
+    save_or_show_plot(path)
