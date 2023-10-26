@@ -28,8 +28,8 @@ def get_args():
     parser.add_argument(
         "--batch_size",
         type=int,
-        default=128,
-        help="Batch size [default: 128]",
+        default=16,
+        help="Batch size [default: 16]",
     )
     parser.add_argument(
         "--filename",
