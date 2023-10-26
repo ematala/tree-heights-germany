@@ -107,19 +107,19 @@ def main():
             labels,
             predictions,
             model_name,
-            os.path.join(results_dir, f"{model_name}-histogram.svg"),
+            os.path.join(results_dir, f"{model_name}-histogram.pdf"),
         )
 
         plot_true_vs_predicted_scatter(
             labels,
             predictions,
             model_name,
-            os.path.join(results_dir, f"{model_name}-scatter.svg"),
+            os.path.join(results_dir, f"{model_name}-scatter.pdf"),
         )
 
     plot_predictions(
         *predict_batch(models, test_dl, device),
-        os.path.join(results_dir, "patches.svg"),
+        os.path.join(results_dir, "patches.pdf"),
     )
 
     # Save results

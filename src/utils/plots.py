@@ -12,7 +12,7 @@ from .misc import get_normalized_image
 from .preprocessing import Preprocessor
 
 CONFIG = {
-    "format": "svg",
+    "format": "pdf",
     "dpi": 300,
     "bbox_inches": "tight",
     "pad_inches": 0.1,
