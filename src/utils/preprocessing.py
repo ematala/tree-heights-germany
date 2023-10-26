@@ -2,6 +2,7 @@ import gc
 import logging
 import os
 import re
+from argparse import ArgumentParser
 from itertools import chain
 from multiprocessing import Pool
 from typing import List
@@ -196,11 +197,31 @@ class Preprocessor:
         return self
 
 
+def get_args():
+    """Get arguments from command line
+
+    Returns:
+        Namespace: Arguments
+    """
+    parser = ArgumentParser(
+        description="Preprocess images and GEDI data for training and evaluation."
+    )
+    parser.add_argument(
+        "--patch_size",
+        type=int,
+        default=256,
+        help="Patch size for the images [default: 256]",
+    )
+    return parser.parse_args()
+
+
 def main():
+    args = get_args()
     Preprocessor(
         img_dir=os.getenv("IMG_DIR"),
         patch_dir=os.getenv("PATCH_DIR"),
         gedi_dir=os.getenv("GEDI_DIR"),
+        **vars(args),
     ).run()
 
 
