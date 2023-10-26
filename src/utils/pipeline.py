@@ -1,6 +1,6 @@
 from typing import List, Tuple
 
-from numpy import array, dot, histogram, ndarray, stack
+from numpy import array, dot, histogram, minimum, ndarray, percentile, stack
 from pandas import DataFrame, Series
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, Dataset, WeightedRandomSampler
@@ -95,6 +95,10 @@ def get_data(
 
     # Compute inverse probability weights
     probs = 1 / (dist + 1e-5)
+
+    # Clip weights to avoid focussing on outliers
+    max_weight = percentile(probs, 95)
+    probs = minimum(probs, max_weight)
 
     # Create splits
     train_df, val_df, test_df = get_splits(patches)
