@@ -53,7 +53,7 @@ class ForestDataset(Dataset):
         # Open the HDF5 file for the patch
         with HDF5File(filename) as hf:
             img = hf["image"][:]
-            label = hf["label"][:]
+            label = hf["labels"][:]
 
         # Return the image patch and label patch as PyTorch tensors
         return (

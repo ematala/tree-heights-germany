@@ -2,6 +2,8 @@ import gc
 import logging
 import os
 import re
+from itertools import chain
+from multiprocessing import Pool
 from typing import List
 
 from geopandas import GeoDataFrame, points_from_xy
@@ -9,11 +11,10 @@ from h5py import File as HDF5File
 from numpy import any as npany
 from numpy import float32
 from numpy import sum as npsum
-from pandas import DataFrame, MultiIndex, read_feather
+from pandas import DataFrame, read_feather
 from rasterio import open as ropen
 from rasterio.features import rasterize
 from shapely.geometry import box
-from tqdm import tqdm
 
 from .misc import get_label_bins, get_normalized_image, get_window_bounds
 
@@ -24,8 +25,8 @@ class Preprocessor:
         img_dir: str = "data/images",
         patch_dir: str = "data/patches",
         gedi_dir: str = "data/gedi",
-        patch_size=256,
-        image_size=4096,
+        patch_size: int = 256,
+        image_size: int = 4096,
         bins: List[int] = list(range(0, 55, 5)),
     ):
         self.img_dir = img_dir
@@ -34,27 +35,23 @@ class Preprocessor:
         self.gedi_file = f"{gedi_dir}/gedi_complete.fth"
         self.patch_size = patch_size
         self.image_size = image_size
+        self.bins = bins
         self.n_patches = (self.image_size // self.patch_size) ** 2
         self.images = []
         self.gedi = None
-        self.bins = bins
-        self.patches = DataFrame(
-            index=MultiIndex.from_product([[], []], names=["image", "patch"]),
-            columns=[
-                "labels",
-                "bins",
-            ],
-            dtype="object",
-        )
+        self.patches = None
 
-        logging.basicConfig(level=logging.INFO)
+        logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
 
     def _validate_directories(self):
         if not os.path.exists(self.img_dir):
             raise FileNotFoundError(f"Image directory {self.img_dir} does not exist.")
 
         if not os.path.exists(self.patch_dir):
-            raise FileNotFoundError(f"Patch directory {self.patch_dir} does not exist.")
+            logging.warning(
+                f"Patch directory {self.patch_dir} did not exist. Creating it now."
+            )
+            os.makedirs(self.patch_dir)
 
         if not os.path.exists(self.gedi_file):
             raise FileNotFoundError(f"GEDI file {self.gedi_file} does not exist.")
@@ -69,82 +66,103 @@ class Preprocessor:
             raise ValueError("No images found in the image directory.")
 
     def _load_gedi(self):
-        self.gedi = read_feather(
-            self.gedi_file,
-            columns=[
-                "latitude",
-                "longitude",
-                "rh98",
-                "solar_elevation",
-                "quality_flag",
-            ],
-        )
+        self.gedi = read_feather(self.gedi_file)
+
         self.gedi = self.gedi[
-            (self.gedi.solar_elevation < 0) & (self.gedi.quality_flag == 1)
+            (self.gedi.solar_elevation < 0)
+            & (self.gedi.quality_flag == 1)
+            & (self.gedi.num_detectedmodes > 0)
+            & (self.gedi.degrade_flag == 0)
+            & (self.gedi.stale_return_flag == 0)
+            & (self.gedi.landsat_treecover > 0)
+            & (self.gedi.rh98 >= 0)
+            & (self.gedi.rh98 <= 70)
         ]
-        self.gedi = (
-            GeoDataFrame(
-                self.gedi,
-                geometry=points_from_xy(self.gedi.longitude, self.gedi.latitude),
-                crs="EPSG:32632",
+
+        self.gedi = GeoDataFrame(
+            self.gedi.rh98,
+            geometry=points_from_xy(self.gedi.longitude, self.gedi.latitude),
+            crs="EPSG:32632",
+        ).to_crs("EPSG:3857")
+
+    def _process_single_image(
+        self,
+        image: str,
+        gedi: GeoDataFrame,
+        img_dir: str,
+        patch_dir: str,
+        patch_size: int,
+        bins: List[int],
+        n_patches: int,
+    ):
+        valid_patches = []
+        with ropen(os.path.join(img_dir, f"{image}.tif")) as src:
+            bounds = box(*src.bounds)
+            subset = gedi[gedi.geometry.intersects(bounds)]
+
+            if subset.empty:
+                logging.warning(f"No valid geometries found for image {image}.")
+                return []
+
+            shapes = [(row.geometry, row.rh98) for row in subset.itertuples()]
+
+            mask = rasterize(
+                shapes=shapes,
+                out_shape=src.shape,
+                transform=src.transform,
+                fill=0,
+                all_touched=True,
+                dtype=float32,
             )
-            .drop(
-                columns=[
-                    "latitude",
-                    "longitude",
-                    "solar_elevation",
-                    "quality_flag",
-                ]
-            )
-            .to_crs("EPSG:3857")
-        )
+
+            # Read image from src
+            img = get_normalized_image(src)
+
+            subdir = os.path.join(patch_dir, image)
+            os.makedirs(subdir, exist_ok=True)
+
+            for patch in range(n_patches):
+                bounds = get_window_bounds(patch, patch_size)
+                row_start, row_end, col_start, col_end = bounds
+
+                data = img[:, row_start:row_end, col_start:col_end]
+                labels = mask[row_start:row_end, col_start:col_end]
+
+                if npany(labels):
+                    with HDF5File(f"{subdir}/{patch}.h5", "w") as hf:
+                        hf.create_dataset("image", data=data)
+                        hf.create_dataset("labels", data=labels)
+
+                    valid_patches.append(
+                        {
+                            "image": image,
+                            "patch": patch,
+                            "labels": npsum(labels != 0),
+                            "bins": get_label_bins(labels, bins),
+                        }
+                    )
+        return valid_patches
 
     def _process_images(self):
-        for image in tqdm(self.images):
-            with ropen(os.path.join(self.img_dir, f"{image}.tif")) as src:
-                bounds = box(*src.bounds)
-                subset = self.gedi[self.gedi.geometry.intersects(bounds)]
-                shapes = [(row.geometry, row.rh98) for row in subset.itertuples()]
-
-                try:
-                    mask = rasterize(
-                        shapes=shapes,
-                        out_shape=src.shape,
-                        transform=src.transform,
-                        fill=0,
-                        all_touched=True,
-                        dtype=float32,
+        with Pool() as pool:
+            results = pool.starmap(
+                self._process_single_image,
+                [
+                    (
+                        image,
+                        self.gedi,
+                        self.img_dir,
+                        self.patch_dir,
+                        self.patch_size,
+                        self.bins,
+                        self.n_patches,
                     )
-                except ValueError as e:
-                    logging.error(f"Error rasterizing image {image}: {str(e)}")
-                    continue
+                    for image in self.images
+                ],
+            )
 
-                # Read image from src
-                img = get_normalized_image(src)
-
-                subdir = os.path.join(self.patch_dir, image)
-                os.makedirs(subdir)
-
-                for patch in range(self.n_patches):
-                    bounds = get_window_bounds(patch, self.patch_size)
-                    row_start, row_end, col_start, col_end = bounds
-
-                    data = img[:, row_start:row_end, col_start:col_end]
-                    label = mask[row_start:row_end, col_start:col_end]
-
-                    if npany(label):
-                        # Save the image patch and label patch in a HDF5 file
-                        with HDF5File(
-                            f"{subdir}/{patch}.h5",
-                            "w",
-                        ) as hf:
-                            hf.create_dataset("image", data=data)
-                            hf.create_dataset("label", data=label)
-
-                        self.patches.loc[(image, patch), "labels"] = npsum(label != 0)
-                        self.patches.loc[(image, patch), "bins"] = get_label_bins(
-                            label, self.bins
-                        )
+        flat_results = list(chain.from_iterable(results))
+        self.patches = DataFrame(flat_results).set_index(["image", "patch"])
 
         gc.collect()
 
@@ -165,7 +183,8 @@ class Preprocessor:
             logging.info("Loaded existing patch info file. Skipping image processing.")
             logging.info(f"Number of patches: {self.patches.shape[0]}")
             logging.info(f"Number of labels: {self.patches.labels.sum()}")
-            return
+            return self
+        logging.info("Starting image processing.")
         self._process_images()
         logging.info("Images processed.")
         logging.info(f"Number of patches: {self.patches.shape[0]}")
