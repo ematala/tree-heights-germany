@@ -86,6 +86,6 @@ transformers==4.33.3
 triton==2.0.0
 typing-extensions==4.8.0
 tzdata==2023.3
-urllib3==2.0.5
-werkzeug==3.0.0
+urllib3==2.0.7
+werkzeug==3.0.1
 zipp==3.17.0
