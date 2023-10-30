@@ -58,11 +58,12 @@ class Preprocessor:
             raise FileNotFoundError(f"GEDI file {self.gedi_file} does not exist.")
 
     def _load_images(self):
+        regexp = r"L15\-\d{4}E\-\d{4}N\.tif"
+
         self.images = [
-            f[: -len(".tif")]
-            for f in os.listdir(self.img_dir)
-            if re.match(r"L15\-\d{4}E\-\d{4}N\.tif", f)
+            f[: -len(".tif")] for f in os.listdir(self.img_dir) if re.match(regexp, f)
         ]
+
         if len(self.images) == 0:
             raise ValueError("No images found in the image directory.")
 
@@ -157,7 +158,7 @@ class Preprocessor:
             )
             for image in self.images
         ]
-        with get_context("spawn").Pool() as pool:
+        with get_context("spawn").Pool(os.cpu_count() // 2) as pool:
             results = pool.starmap(
                 self._process_single_image,
                 tqdm(img_args, "Processing images", len(img_args)),
