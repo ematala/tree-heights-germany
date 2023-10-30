@@ -1,3 +1,3 @@
-from dotenv import load_dotenv as env
+from dotenv import load_dotenv
 
-env()
+load_dotenv()

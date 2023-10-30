@@ -1,10 +1,9 @@
-import gc
 import logging
 import os
 import re
 from argparse import ArgumentParser
 from itertools import chain
-from multiprocessing import Pool
+from multiprocessing import get_context
 from typing import List
 
 from geopandas import GeoDataFrame, points_from_xy
@@ -158,7 +157,7 @@ class Preprocessor:
             )
             for image in self.images
         ]
-        with Pool() as pool:
+        with get_context("spawn").Pool() as pool:
             results = pool.starmap(
                 self._process_single_image,
                 tqdm(img_args, "Processing images", len(img_args)),
@@ -166,8 +165,6 @@ class Preprocessor:
 
         flat_results = list(chain.from_iterable(results))
         self.patches = DataFrame(flat_results).set_index(["image", "patch"])
-
-        gc.collect()
 
     def _save_patches(self):
         self.patches.reset_index().to_feather(self.patches_file)
@@ -184,13 +181,13 @@ class Preprocessor:
         if os.path.exists(self.patches_file):
             self.patches = read_feather(self.patches_file).set_index(["image", "patch"])
             logging.info("Loaded existing patch info file. Skipping image processing.")
-            logging.info(f"Number of patches: {self.patches.shape[0]}")
+            logging.info(f"Number of patches: {len(self.patches)}")
             logging.info(f"Number of labels: {self.patches.labels.sum()}")
             return self
         logging.info("Starting image processing.")
         self._process_images()
         logging.info("Images processed.")
-        logging.info(f"Number of patches: {self.patches.shape[0]}")
+        logging.info(f"Number of patches: {len(self.patches)}")
         logging.info(f"Number of labels: {self.patches.labels.sum()}")
         self._save_patches()
         logging.info("Patch info saved.")
