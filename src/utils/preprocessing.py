@@ -16,6 +16,7 @@ from pandas import DataFrame, read_feather
 from rasterio import open as ropen
 from rasterio.features import rasterize
 from shapely.geometry import box
+from tqdm import tqdm
 
 from .misc import get_label_bins, get_normalized_image, get_window_bounds
 
@@ -145,21 +146,22 @@ class Preprocessor:
         return valid_patches
 
     def _process_images(self):
+        img_args = [
+            (
+                image,
+                self.gedi,
+                self.img_dir,
+                self.patch_dir,
+                self.patch_size,
+                self.bins,
+                self.n_patches,
+            )
+            for image in self.images
+        ]
         with Pool() as pool:
             results = pool.starmap(
                 self._process_single_image,
-                [
-                    (
-                        image,
-                        self.gedi,
-                        self.img_dir,
-                        self.patch_dir,
-                        self.patch_size,
-                        self.bins,
-                        self.n_patches,
-                    )
-                    for image in self.images
-                ],
+                tqdm(img_args, "Processing images", len(img_args)),
             )
 
         flat_results = list(chain.from_iterable(results))

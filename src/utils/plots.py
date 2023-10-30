@@ -1,7 +1,7 @@
 import os
 from typing import Optional
 
-from geopandas import read_file, sjoin
+from geopandas import GeoDataFrame, read_file, sjoin
 from matplotlib import pyplot as plt
 from numpy import arange, expand_dims, minimum, ndarray
 from rasterio import open as ropen
@@ -9,7 +9,6 @@ from rasterio.plot import show as rshow
 from torch import Tensor
 
 from .misc import get_normalized_image
-from .preprocessing import Preprocessor
 
 CONFIG = {
     "format": "pdf",
@@ -101,17 +100,11 @@ def plot_image_channels(
 
 
 def plot_labels_in_germany(
+    gedi: GeoDataFrame,
     shapefile: str = "data/germany/germany.geojson",
     path: Optional[str] = None,
 ) -> None:
-    preprocessor = Preprocessor()
-    preprocessor._load_gedi()
-
-    gedi = preprocessor.gedi
-
     germany = read_file(os.path.join(shapefile)).to_crs("EPSG:3857")
-
-    gedi = gedi[(gedi.rh98 > 0) & (gedi.rh98 <= 50)]
 
     gedi_germany = sjoin(gedi, germany, how="inner", op="within")
 

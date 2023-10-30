@@ -14,9 +14,9 @@ from .plots import (
     plot_image_channels,
     plot_labels_in_germany,
     plot_predictions,
-    plot_true_vs_predicted_scatter,
     plot_true_vs_predicted_histogram,
+    plot_true_vs_predicted_scatter,
 )
-from .predictions import predict_image, predict_batch
+from .predictions import predict_batch, predict_image
 from .preprocessing import Preprocessor
 from .stopping import EarlyStopping
