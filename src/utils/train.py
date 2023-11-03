@@ -11,7 +11,7 @@ from torch.optim import AdamW, Optimizer
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.tensorboard import SummaryWriter
 
-from ..models import ResidualUnet, Unet, UnetPlusPlus, VitNet
+from ..models import Unet, UnetPlusPlus, VitNet
 from .loss import loss
 from .misc import get_device, seed_everyting
 from .models import load, test, train, validate
@@ -51,8 +51,7 @@ def get_model_and_optimizer(model: str) -> Tuple[Module, Optimizer]:
 
     config = {
         "unet": {"class": Unet, "params": {}},
-        "uresnet": {"class": ResidualUnet, "params": {}},
-        "uplusplus": {"class": UnetPlusPlus, "params": {}},
+        "unetplusplus": {"class": UnetPlusPlus, "params": {}},
         "vit-base": {
             "class": VitNet,
             "params": {
@@ -102,8 +101,7 @@ def get_args():
         "--model",
         choices=[
             "unet",
-            "uresnet",
-            "uplusplus",
+            "unetplusplus",
             "vit-base",
             "vit-medium",
             "vit-large",

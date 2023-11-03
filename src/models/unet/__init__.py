@@ -3,6 +3,8 @@ from typing import Any, Dict, List, Optional, Union
 from segmentation_models_pytorch import Unet as SegmentationUnet
 from torch import Tensor
 
+from .decoder import UnetDecoder
+
 
 class Unet(SegmentationUnet):
     def __init__(
@@ -32,6 +34,17 @@ class Unet(SegmentationUnet):
             aux_params=aux_params,
             **kwargs
         )
+
+        self.decoder = UnetDecoder(
+            encoder_channels=self.encoder.out_channels,
+            decoder_channels=decoder_channels,
+            n_blocks=encoder_depth,
+            use_batchnorm=decoder_use_batchnorm,
+            center=True if encoder_name.startswith("vgg") else False,
+            attention_type=decoder_attention_type,
+        )
+
+        self.initialize()
 
     def count_params(self) -> int:
         return sum([p.numel() for p in self.parameters() if p.requires_grad])

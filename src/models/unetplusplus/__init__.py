@@ -3,6 +3,8 @@ from typing import Any, Dict, List, Optional, Union
 from segmentation_models_pytorch import UnetPlusPlus as SegmentationUnetPlusPlus
 from torch import Tensor
 
+from .decoder import UnetPlusPlusDecoder
+
 
 class UnetPlusPlus(SegmentationUnetPlusPlus):
     def __init__(
@@ -19,7 +21,7 @@ class UnetPlusPlus(SegmentationUnetPlusPlus):
         aux_params: Optional[Dict] = None,
         **kwargs: Any
     ):
-        super().__init__(
+        super(UnetPlusPlus, self).__init__(
             encoder_name=encoder_name,
             encoder_depth=encoder_depth,
             encoder_weights=encoder_weights,
@@ -32,6 +34,16 @@ class UnetPlusPlus(SegmentationUnetPlusPlus):
             aux_params=aux_params,
             **kwargs
         )
+        self.decoder = UnetPlusPlusDecoder(
+            encoder_channels=self.encoder.out_channels,
+            decoder_channels=decoder_channels,
+            n_blocks=encoder_depth,
+            use_batchnorm=decoder_use_batchnorm,
+            center=True if encoder_name.startswith("vgg") else False,
+            attention_type=decoder_attention_type,
+        )
+
+        self.initialize()
 
     def count_params(self) -> int:
         return sum([p.numel() for p in self.parameters() if p.requires_grad])
