@@ -2,6 +2,7 @@ import logging
 import os
 import re
 from argparse import ArgumentParser
+from functools import partial
 from itertools import chain
 from multiprocessing import get_context
 from typing import List
@@ -146,24 +147,25 @@ class Preprocessor:
         return valid_patches
 
     def _process_images(self):
-        img_args = [
-            (
-                image,
-                self.gedi,
-                self.img_dir,
-                self.patch_dir,
-                self.patch_size,
-                self.bins,
-                self.n_patches,
-            )
-            for image in self.images
-        ]
-        with get_context("spawn").Pool(os.cpu_count() // 2) as pool:
-            results = pool.starmap(
-                self._process_single_image,
-                tqdm(img_args, "Processing images", len(img_args)),
-            )
+        fn = partial(
+            self._process_single_image,
+            gedi=self.gedi,
+            img_dir=self.img_dir,
+            patch_dir=self.patch_dir,
+            patch_size=self.patch_size,
+            bins=self.bins,
+            n_patches=self.n_patches,
+        )
 
+        results = []
+
+        with get_context("spawn").Pool(os.cpu_count() // 2) as pool:
+            for result in tqdm(
+                pool.imap_unordered(fn, self.images),
+                "Processing images",
+                len(self.images),
+            ):
+                results.append(result)
         flat_results = list(chain.from_iterable(results))
         self.patches = DataFrame(flat_results).set_index(["image", "patch"])
 
