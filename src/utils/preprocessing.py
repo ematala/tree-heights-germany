@@ -104,7 +104,6 @@ class Preprocessor:
             subset = gedi[gedi.geometry.intersects(bounds)]
 
             if subset.empty:
-                logging.warning(f"No valid geometries found for image {image}.")
                 return []
 
             shapes = [(row.geometry, row.rh98) for row in subset.itertuples()]
