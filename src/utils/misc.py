@@ -1,9 +1,11 @@
+import os
 from random import seed as pyseed
 from typing import List, Optional, Tuple
 
 from numpy import histogram as nphist
 from numpy import ndarray, stack
 from numpy.random import seed as npseed
+from requests import post
 from torch import device as Device
 from torch import manual_seed as tseed
 from torch.backends.mps import is_available as mps_available
@@ -81,4 +83,17 @@ def get_device(dev: Optional[str] = None) -> Device:
         else "mps"
         if mps_available()
         else "cpu"
+    )
+
+
+def send_telegram_message(message: str):
+    token = os.getenv("TELEGRAM_TOKEN")
+    chat_id = os.getenv("TELEGRAM_CHAT_ID")
+
+    if not token or not chat_id:
+        raise ValueError("Telegram token and chat id must be set")
+
+    post(
+        f"https://api.telegram.org/bot{token}/sendMessage",
+        {"chat_id": chat_id, "text": message},
     )

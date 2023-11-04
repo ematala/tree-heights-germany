@@ -18,7 +18,12 @@ from rasterio.features import rasterize
 from shapely.geometry import box
 from tqdm import tqdm
 
-from .misc import get_label_bins, get_normalized_image, get_window_bounds
+from .misc import (
+    get_label_bins,
+    get_normalized_image,
+    get_window_bounds,
+    send_telegram_message,
+)
 
 
 class Preprocessor:
@@ -224,6 +229,7 @@ def main():
         gedi_dir=os.getenv("GEDI_DIR"),
         **vars(args),
     ).run()
+    send_telegram_message("Finished preprocessing")
 
 
 if __name__ == "__main__":

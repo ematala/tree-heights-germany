@@ -1,10 +1,8 @@
 import logging
 import os
 from argparse import ArgumentParser
-from logging import info
 from typing import Tuple
 
-import requests
 from torch import rand
 from torch.nn import Module
 from torch.optim import AdamW, Optimizer
@@ -13,7 +11,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 from ..models import Unet, UnetPlusPlus, VitNet
 from .loss import loss
-from .misc import get_device, seed_everyting
+from .misc import get_device, seed_everyting, send_telegram_message
 from .models import load, test, train, validate
 from .pipeline import get_data
 from .stopping import EarlyStopping
@@ -172,7 +170,7 @@ def main():
     alpha = config.alpha
     patience = config.patience
 
-    info(
+    logging.info(
         f"Starting training with {config.model} configuration for {epochs} epochs on device {device}"
     )
 
@@ -192,7 +190,7 @@ def main():
 
     num_params = model.count_params()
 
-    info(f"Learnable params: {num_params:,}")
+    logging.info(f"Learnable params: {num_params:,}")
 
     # Move model to device
     model.to(device)
@@ -201,7 +199,7 @@ def main():
     teacher = None
 
     if config.teacher:
-        info(f"Loading teacher model {config.teacher}")
+        logging.info(f"Loading teacher model {config.teacher}")
         teacher = load(os.path.join(model_dir, config.teacher), device)
 
     # Create scheduler
@@ -247,20 +245,23 @@ def main():
         trained_epochs += 1
         stopper(val_loss)
         if stopper.stop:
-            info(f"Early stopping at epoch {trained_epochs}")
+            logging.info(f"Early stopping at epoch {trained_epochs}")
             break
 
     # Close writer
     writer.close()
 
-    info("Training finished.")
+    logging.info("Training finished.")
 
     # Test model
     test_loss, test_mae, test_rmse, test_loss_by_range, _, _ = test(
         model, test_dl, loss, device, bins
     )
 
-    info(
+    report = (
+        f"Finished training with {config.model} configuration for {epochs} epochs\n"
+        f"Learnable params: {num_params:,}\n"
+        f"Early stopping triggered at epoch {trained_epochs}\n"
         f"Final test loss: {test_loss:>8f}\n"
         f"Final MAE loss: {test_mae:>8f}\n"
         f"Final RMSE loss: {test_rmse:>8f}\n"
@@ -268,33 +269,10 @@ def main():
         f"Losses by range: {test_loss_by_range}"
     )
 
+    logging.info(report)
+
     if config.notify:
-        token = os.getenv("TELEGRAM_TOKEN")
-        chat_id = os.getenv("TELEGRAM_CHAT_ID")
-
-        if not token or not chat_id:
-            raise ValueError("Telegram token and chat id must be set")
-
-        info("Sending notification")
-
-        url = f"https://api.telegram.org/bot{token}/sendMessage"
-        data = {
-            "chat_id": chat_id,
-            "text": (
-                f"Finished training with {config.model} configuration for {epochs} epochs\n"
-                f"Learnable params: {num_params:,}\n"
-                f"Early stopping triggered at epoch {trained_epochs}\n"
-                f"Final test loss: {test_loss:>8f}\n"
-                f"Final MAE loss: {test_mae:>8f}\n"
-                f"Final RMSE loss: {test_rmse:>8f}\n"
-                f"Ranges: {bins}\n"
-                f"Losses by range: {test_loss_by_range}"
-            ),
-        }
-
-        res = requests.post(url, data=data)
-
-        info(f"Response status: {res.status_code}")
+        send_telegram_message(report)
 
 
 if __name__ == "__main__":
