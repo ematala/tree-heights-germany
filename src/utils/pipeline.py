@@ -79,7 +79,7 @@ def get_data(
     bins: List[int] = list(range(0, 55, 5)),
 ) -> Tuple[DataLoader, DataLoader, DataLoader]:
     # Create preprocessor
-    preprocessor = Preprocessor(img_dir, patch_dir, gedi_dir, image_size)
+    preprocessor = Preprocessor(img_dir, patch_dir, gedi_dir, image_size, bins)
 
     # Run preprocessor
     preprocessor.run()
