@@ -45,9 +45,6 @@ class UnetPlusPlus(SegmentationUnetPlusPlus):
 
         self.initialize()
 
-    def count_params(self) -> int:
-        return sum([p.numel() for p in self.parameters() if p.requires_grad])
-
     def forward(self, x: Tensor) -> Tensor:
         x = super(UnetPlusPlus, self).forward(x)
         x = x.squeeze()

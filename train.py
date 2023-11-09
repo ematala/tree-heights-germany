@@ -197,10 +197,6 @@ def main():
     # Create model and optimizer
     model, optimizer = get_model_and_optimizer(config.model)
 
-    num_params = model.count_params()
-
-    logging.info(f"Learnable params: {num_params:,}")
-
     # Move model to device
     model.to(device)
 
@@ -269,7 +265,6 @@ def main():
 
     report = (
         f"Finished training with {config.model} configuration for {epochs} epochs\n"
-        f"Learnable params: {num_params:,}\n"
         f"Early stopping triggered at epoch {trained_epochs}\n"
         f"Final test loss: {test_loss:>8f}\n"
         f"Final MAE loss: {test_mae:>8f}\n"

@@ -46,9 +46,6 @@ class Unet(SegmentationUnet):
 
         self.initialize()
 
-    def count_params(self) -> int:
-        return sum([p.numel() for p in self.parameters() if p.requires_grad])
-
     def forward(self, x: Tensor) -> Tensor:
         x = super(Unet, self).forward(x)
         x = x.squeeze()
