@@ -10,12 +10,12 @@ from torch.optim import AdamW, Optimizer
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.tensorboard import SummaryWriter
 
-from models import Unet, UnetPlusPlus, VitNet
+from models import Unet, UnetPlusPlus, Vit, VitNet
 from utils import (
     EarlyStopping,
     get_data,
     get_device,
-    load,
+    load_model,
     loss,
     seed_everyting,
     send_telegram_message,
@@ -58,6 +58,7 @@ def get_model_and_optimizer(model: str) -> Tuple[Module, Optimizer]:
     config = {
         "unet": {"class": Unet, "params": {}},
         "unetplusplus": {"class": UnetPlusPlus, "params": {}},
+        "vit": {"class": Vit, "params": {}},
         "vit-base": {
             "class": VitNet,
             "params": {
@@ -108,6 +109,7 @@ def get_args():
         choices=[
             "unet",
             "unetplusplus",
+            "vit",
             "vit-base",
             "vit-medium",
             "vit-large",
@@ -205,7 +207,7 @@ def main():
 
     if config.teacher:
         logging.info(f"Loading teacher model {config.teacher}")
-        teacher = load(os.path.join(model_dir, config.teacher), device)
+        teacher = load_model(os.path.join(model_dir, config.teacher), device)
 
     # Create scheduler
     scheduler = CosineAnnealingLR(optimizer, epochs)

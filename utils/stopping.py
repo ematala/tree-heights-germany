@@ -3,7 +3,7 @@ import os
 from numpy import Inf
 from torch.nn import Module
 
-from .models import save
+from .io import save_model
 
 
 class EarlyStopping:
@@ -38,7 +38,7 @@ class EarlyStopping:
     def __call__(self, score: float):
         if self.best_score is None:
             self.best_score = score
-            save(self.model, self.path)
+            save_model(self.model, self.path)
         elif score > self.best_score + self.delta:
             self.counter += 1
             if self.counter >= self.patience:
@@ -46,4 +46,4 @@ class EarlyStopping:
         else:
             self.best_score = score
             self.counter = 0
-            save(self.model, self.path)
+            save_model(self.model, self.path)

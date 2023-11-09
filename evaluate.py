@@ -8,7 +8,7 @@ from pandas import DataFrame
 from utils import (
     get_data,
     get_device,
-    load,
+    load_model,
     loss,
     plot_predictions,
     plot_true_vs_predicted_histogram,
@@ -78,7 +78,7 @@ def main():
 
     # Load all models
     models = {
-        filename[: -len(".pt")]: load(os.path.join(model_dir, filename), device)
+        filename[: -len(".pt")]: load_model(os.path.join(model_dir, filename), device)
         for filename in [f for f in os.listdir(model_dir) if f.endswith(".pt")]
     }
 

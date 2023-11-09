@@ -15,8 +15,6 @@ from torch import (
     zeros,
 )
 from torch import device as Device
-from torch import load as tload
-from torch import save as tsave
 from torch.nn import L1Loss, Module, MSELoss
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler as LRScheduler
@@ -250,23 +248,3 @@ def apply_colormap(img: Tensor) -> Tensor:
     img = (img.cpu() - min) / (max - min)
     cmap = plt.cm.viridis(img.numpy())[..., :3]
     return from_numpy(cmap).float()
-
-
-def load(path: str, device: Device) -> Module:
-    model = tload(path, map_location=device)
-
-    model.eval()
-
-    return model
-
-
-def save(model: Module, path: str) -> None:
-    tsave(model, path)
-
-
-def visualise_attention(model: Module):
-    pass
-
-
-def visualise_attention_head():
-    pass
