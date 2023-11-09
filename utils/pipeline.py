@@ -79,7 +79,7 @@ def get_data(
     bins: List[int] = list(range(0, 55, 5)),
 ) -> Tuple[DataLoader, DataLoader, DataLoader]:
     # Create preprocessor
-    preprocessor = Preprocessor(img_dir, patch_dir, gedi_dir, image_size, bins)
+    preprocessor = Preprocessor(img_dir, patch_dir, gedi_dir, image_size, bins=bins)
 
     # Run preprocessor
     preprocessor.run()
@@ -88,7 +88,7 @@ def get_data(
     labels = preprocessor.gedi.rh98
 
     # Get patches
-    patches = preprocessor.patches
+    patches = preprocessor.patches.sample(n=100)
 
     # Get label distribution
     dist, _ = histogram(labels, bins)

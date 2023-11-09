@@ -1,4 +1,8 @@
 import os
+import re
+from functools import partial
+from itertools import chain
+from multiprocessing import get_context
 from typing import Dict, Tuple
 
 from numpy import float32, ndarray, zeros
@@ -11,6 +15,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from .misc import get_normalized_image, get_window_bounds
+from .models import load
 
 
 def predict_patch(
@@ -92,3 +97,23 @@ def predict_batch(
         predictions[model_name] = outputs.cpu()
 
     return inputs, predictions
+
+
+def predict_all_images(
+    img_dir: str,
+    patch_size: int,
+    model_path: str,
+    device: Device,
+    filename: str,
+):
+    regexp = r"L15\-\d{4}E\-\d{4}N\.tif"
+    images = [f for f in os.listdir(img_dir) if re.match(regexp, f)]
+
+    model = load(model_path)
+    fn = partial(model)
+    desc = "Predicting images"
+
+    with get_context("spawn").Pool(os.cpu_count() // 2) as pool:
+        res = [r for r in tqdm(pool.imap_unordered(fn, images), desc, len(images))]
+
+    return list(chain.from_iterable(res))

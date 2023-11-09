@@ -3,18 +3,26 @@ import os
 from argparse import ArgumentParser
 from typing import Tuple
 
+from dotenv import load_dotenv
 from torch import rand
 from torch.nn import Module
 from torch.optim import AdamW, Optimizer
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.tensorboard import SummaryWriter
 
-from ..models import Unet, UnetPlusPlus, VitNet
-from .loss import loss
-from .misc import get_device, seed_everyting, send_telegram_message
-from .models import load, test, train, validate
-from .pipeline import get_data
-from .stopping import EarlyStopping
+from models import Unet, UnetPlusPlus, VitNet
+from utils import (
+    EarlyStopping,
+    get_data,
+    get_device,
+    load,
+    loss,
+    seed_everyting,
+    send_telegram_message,
+    test,
+    train,
+    validate,
+)
 
 
 def get_optimizer(model: Module, lr: float) -> Optimizer:
@@ -147,6 +155,7 @@ def get_args():
 
 
 def main():
+    load_dotenv()
     img_dir = os.getenv("IMG_DIR")
     log_dir = os.getenv("LOG_DIR")
     model_dir = os.getenv("MODEL_DIR")

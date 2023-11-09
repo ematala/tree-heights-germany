@@ -168,6 +168,7 @@ results
 *.h5
 *.npz
 *.pt
+*.fth
 
 # logs
 logs

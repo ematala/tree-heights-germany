@@ -2,18 +2,21 @@ import logging
 import os
 from argparse import ArgumentParser
 
+from dotenv import load_dotenv
 from pandas import DataFrame
 
-from .loss import loss
-from .misc import get_device, seed_everyting
-from .models import load, test
-from .pipeline import get_data
-from .plots import (
+from utils import (
+    get_data,
+    get_device,
+    load,
+    loss,
     plot_predictions,
     plot_true_vs_predicted_histogram,
     plot_true_vs_predicted_scatter,
+    predict_batch,
+    seed_everyting,
+    test,
 )
-from .predictions import predict_batch
 
 
 def get_args():
@@ -41,6 +44,7 @@ def get_args():
 
 
 def main():
+    load_dotenv()
     img_dir = os.getenv("IMG_DIR")
     model_dir = os.getenv("MODEL_DIR")
     patch_dir = os.getenv("PATCH_DIR")

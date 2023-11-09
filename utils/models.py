@@ -171,6 +171,18 @@ def test(
     range_bins = list(zip(ranges[:-1], ranges[1:]))
     loss_by_range: Tensor = zeros(len(range_bins)).to(device)
 
+    metrics = {
+        "total": 0,
+        "mae": 0,
+        "rmse": 0,
+        "loss_by_range": zeros(len(range_bins)).to(device),
+    }
+
+    predictions = {
+        "true": [],
+        "predicted": [],
+    }
+
     # Huber loss
     loss: float = 0
 
@@ -197,14 +209,27 @@ def test(
             all_targets.append(filtered_targets.cpu())
             all_predictions.append(filtered_outputs.cpu())
 
+            predictions["true"].append(filtered_targets.cpu())
+            predictions["predicted"].append(filtered_outputs.cpu())
+
+            metrics["total"] += criterion(filtered_outputs, filtered_targets).item()
+            metrics["mae"] += mae(filtered_outputs, filtered_targets).item()
+            metrics["rmse"] += sqrt(mse(filtered_outputs, filtered_targets).item())
+
             loss += criterion(filtered_outputs, filtered_targets).item()
             mae_loss += mae(filtered_outputs, filtered_targets).item()
             rmse_loss += sqrt(mse(filtered_outputs, filtered_targets).item())
 
             batch_loss_by_range = range_loss(outputs, targets, range_bins)
+            metrics["loss_by_range"] += where(
+                isnan(batch_loss_by_range), 0, batch_loss_by_range
+            )
             loss_by_range += where(isnan(batch_loss_by_range), 0, batch_loss_by_range)
 
     # Average losses
+    for key in metrics.keys():
+        metrics[key] /= len(loader)
+
     loss /= len(loader)
     mae_loss /= len(loader)
     rmse_loss /= len(loader)
@@ -237,3 +262,11 @@ def load(path: str, device: Device) -> Module:
 
 def save(model: Module, path: str) -> None:
     tsave(model, path)
+
+
+def visualise_attention(model: Module):
+    pass
+
+
+def visualise_attention_head():
+    pass
