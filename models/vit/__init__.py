@@ -23,7 +23,7 @@ def _make_fusion_block(features, use_bn):
 class Vit(nn.Module):
     def __init__(
         self,
-        features=128,
+        features=96,
         backbone="vitb16_384",
         readout="ignore",
         channels_last=False,
@@ -38,6 +38,7 @@ class Vit(nn.Module):
         hooks = {
             "vitb_rn50_384": [0, 1, 8, 11],
             "vitb16_384": [2, 5, 8, 11],
+            "vit_deit_base_patch16_384": [2, 5, 8, 11],
             "vitl16_384": [5, 11, 17, 23],
         }
 
@@ -84,3 +85,12 @@ class Vit(nn.Module):
         out = self.output_conv(path_1)
 
         return out.squeeze(dim=1)
+
+
+def make_model(name: str = "base"):
+    return {
+        "base": Vit(),
+        "large": Vit(features=256, backbone="vitl16_384"),
+        "deit": Vit(features=128, backbone="vit_deit_base_patch16_384"),
+        "hybrid": Vit(features=128, backbone="vitb_rn50_384"),
+    }[name]

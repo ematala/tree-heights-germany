@@ -84,7 +84,7 @@ def validate(
     range_bins = list(zip(ranges[:-1], ranges[1:]))
     loss_by_range: Tensor = zeros(len(range_bins)).to(device)
 
-    # Huber loss
+    # User defined loss
     loss: float = 0
 
     # MAE loss
@@ -181,7 +181,7 @@ def test(
         "predicted": [],
     }
 
-    # Huber loss
+    # User defined loss
     loss: float = 0
 
     # MAE loss

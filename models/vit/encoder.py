@@ -1,5 +1,6 @@
 import math
 import types
+from typing import List
 
 import timm
 import torch
@@ -458,7 +459,6 @@ def _make_pretrained_vitb_rn50_384(
     return _make_vit_b_rn50_backbone(
         model,
         features=[256, 512, 768, 768],
-        size=[384, 384],
         hooks=hooks,
         use_vit_only=use_vit_only,
         use_readout=use_readout,
@@ -504,8 +504,7 @@ def _make_pretrained_deitb16_384(
     hooks=[2, 5, 8, 11],
     enable_attention_hooks=False,
 ):
-    model = timm.create_model("vit_deit_base_patch16_384")
-
+    model = timm.create_model("deit_base_patch16_384")
     return _make_vit_b16_backbone(
         model,
         features=[96, 192, 384, 768],
@@ -515,51 +514,49 @@ def _make_pretrained_deitb16_384(
     )
 
 
-def _make_pretrained_deitb16_distil_384(
+def _make_pretrained_deitb16_384t(
     use_readout="ignore",
     hooks=[2, 5, 8, 11],
     enable_attention_hooks=False,
 ):
-    model = timm.create_model("vit_deit_base_distilled_patch16_384")
-
+    model = timm.create_model("deit_tiny_patch16_224")
     return _make_vit_b16_backbone(
         model,
         features=[96, 192, 384, 768],
         hooks=hooks,
         use_readout=use_readout,
-        start_index=2,
         enable_attention_hooks=enable_attention_hooks,
     )
 
 
 def make_encoder(
-    backbone,
-    hooks=None,
-    use_vit_only=False,
-    use_readout="ignore",
-    enable_attention_hooks=False,
+    backbone: str,
+    hooks: List[int] = None,
+    use_vit_only: bool = False,
+    use_readout: str = "ignore",
+    enable_attention_hooks: bool = False,
 ):
-    if backbone == "vitl16_384":
-        encoder = _make_pretrained_vitl16_384(
+    return {
+        "vitb16_384": _make_pretrained_vitb16_384(
+            use_readout=use_readout,
+            hooks=hooks,
+            enable_attention_hooks=enable_attention_hooks,
+        ),
+        "vitl16_384": _make_pretrained_vitl16_384(
+            use_readout=use_readout,
+            hooks=hooks,
+            enable_attention_hooks=enable_attention_hooks,
+        ),
+        "vit_deit_base_patch16_384": _make_pretrained_deitb16_384(
+            use_readout=use_readout,
+            hooks=hooks,
+            enable_attention_hooks=enable_attention_hooks,
+        ),
+        # todo add tiny deit models
+        "vitb_rn50_384": _make_pretrained_vitb_rn50_384(
             hooks=hooks,
             use_readout=use_readout,
-            enable_attention_hooks=enable_attention_hooks,
-        )
-    elif backbone == "vitb_rn50_384":
-        encoder = _make_pretrained_vitb_rn50_384(
-            hooks=hooks,
             use_vit_only=use_vit_only,
-            use_readout=use_readout,
             enable_attention_hooks=enable_attention_hooks,
-        )
-    elif backbone == "vitb16_384":
-        encoder = _make_pretrained_vitb16_384(
-            hooks=hooks,
-            use_readout=use_readout,
-            enable_attention_hooks=enable_attention_hooks,
-        )
-    else:
-        print(f"Backbone '{backbone}' not implemented")
-        assert False
-
-    return encoder
+        ),
+    }[backbone]
