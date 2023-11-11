@@ -1,12 +1,13 @@
 import torch
 import torch.nn as nn
 
+from .backbone import forward_vit
 from .blocks import (
     FeatureFusionBlock_custom,
     Interpolate,
 )
 from .decoder import make_decoder
-from .encoder import forward_vit, make_encoder
+from .encoder import make_encoder
 
 
 def _make_fusion_block(features, use_bn):
@@ -25,7 +26,7 @@ class Vit(nn.Module):
         self,
         features=96,
         backbone="vitb16_384",
-        readout="ignore",
+        readout_op="ignore",
         channels_last=False,
         use_bn=True,
         enable_attention_hooks=False,
@@ -35,20 +36,7 @@ class Vit(nn.Module):
 
         self.channels_last = channels_last
 
-        hooks = {
-            "vitb_rn50_384": [0, 1, 8, 11],
-            "vitb16_384": [2, 5, 8, 11],
-            "vit_deit_base_patch16_384": [2, 5, 8, 11],
-            "vitl16_384": [5, 11, 17, 23],
-        }
-
-        self.encoder = make_encoder(
-            backbone,
-            hooks=hooks[backbone],
-            use_readout=readout,
-            enable_attention_hooks=enable_attention_hooks,
-        )
-
+        self.encoder = make_encoder(backbone, readout_op, enable_attention_hooks)
         self.decoder = make_decoder(backbone, features)
 
         self.refinenet1 = _make_fusion_block(features, use_bn)
@@ -89,7 +77,7 @@ class Vit(nn.Module):
 
 def make_model(name: str = "base"):
     return {
-        "base": Vit(),
+        "base": Vit(features=128),
         "large": Vit(features=256, backbone="vitl16_384"),
         "deit": Vit(features=128, backbone="vit_deit_base_patch16_384"),
         "hybrid": Vit(features=128, backbone="vitb_rn50_384"),
