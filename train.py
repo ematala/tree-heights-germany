@@ -1,16 +1,14 @@
 import logging
 import os
 from argparse import ArgumentParser
-from typing import Tuple
 
 from dotenv import load_dotenv
 from torch import rand
-from torch.nn import Module
-from torch.optim import AdamW, Optimizer
+from torch.optim import AdamW
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.tensorboard import SummaryWriter
 
-from models import Unet, UnetPlusPlus, Vit, VitNet
+from models import make_model
 from utils import (
     EarlyStopping,
     get_data,
@@ -23,76 +21,6 @@ from utils import (
     train,
     validate,
 )
-
-
-def get_optimizer(model: Module, lr: float) -> Optimizer:
-    """
-    Get optimizer for model.
-
-    Args:
-        model (Module): The model to get the optimizer for.
-        lr (float): The learning rate to use for the optimizer.
-
-    Returns:
-        Optimizer: The optimizer for the given model.
-    """
-    return AdamW(model.parameters(), lr)
-
-
-def get_model_and_optimizer(model: str) -> Tuple[Module, Optimizer]:
-    """
-    Get model and optimizer configuration.
-
-    Args:
-        model (str, optional): The model to use. Defaults to "unet".
-
-    Raises:
-        ValueError: If the model is not supported.
-
-    Returns:
-        Tuple[Module, Optimizer]: The model and optimizer instances.
-    """
-    # constant lr for all models
-    lr = 1e-4
-
-    config = {
-        "unet": {"class": Unet, "params": {}},
-        "unetplusplus": {"class": UnetPlusPlus, "params": {}},
-        "vit": {"class": Vit, "params": {}},
-        "vit-base": {
-            "class": VitNet,
-            "params": {
-                "num_attention_heads": 8,
-                "hidden_size": 128,
-                "intermediate_size": 512,
-            },
-        },
-        "vit-medium": {
-            "class": VitNet,
-            "params": {
-                "num_attention_heads": 12,
-                "hidden_size": 192,
-                "intermediate_size": 768,
-            },
-        },
-        "vit-large": {
-            "class": VitNet,
-            "params": {
-                "num_attention_heads": 16,
-                "hidden_size": 256,
-                "intermediate_size": 1024,
-            },
-        },
-    }
-
-    if model not in config:
-        raise ValueError(f"Model {model} not supported")
-
-    model_info = config[model]
-    model_instance = model_info["class"](**model_info["params"])
-    optimizer_instance = get_optimizer(model_instance, lr)
-
-    return model_instance, optimizer_instance
 
 
 def get_args():
@@ -197,7 +125,13 @@ def main():
     )
 
     # Create model and optimizer
-    model, optimizer = get_model_and_optimizer(config.model)
+    model = make_model(config.model)
+
+    # constant lr for all models
+    lr = 1e-4
+
+    # Create optimizer
+    optimizer = AdamW(model.parameters(), lr)
 
     # Move model to device
     model.to(device)

@@ -1,3 +1,4 @@
+from typing import List
 import torch
 import torch.nn as nn
 
@@ -38,9 +39,9 @@ class ProjectReadout(nn.Module):
         return self.project(features)
 
 
-def get_readout_operation(
+def _get_readout_operation(
+    features: List[int],
     op: str = "ignore",
-    features: int = 128,
     start_index=1,
 ) -> nn.Module:
     return {

@@ -1,4 +1,4 @@
-from logging import info
+import logging
 from math import sqrt
 from typing import Callable, List, Optional, Tuple
 
@@ -145,7 +145,7 @@ def validate(
 
     writer.add_images("Plots/predictions", preds, epoch, dataformats="NHWC")
 
-    info(
+    logging.info(
         f"Validation epoch {epoch + 1}\n"
         f"Total loss: {loss:>8f}\n"
         f"MAE loss: {mae_loss:>8f}\n"

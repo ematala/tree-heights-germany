@@ -3,6 +3,17 @@ from typing import List
 import torch.nn as nn
 
 
+def make_decoder(
+    backbone,
+    features=128,
+    groups=1,
+    expand=False,
+):
+    return {
+        "vitb16_256": VitDecoder([64, 96, 128, 128], features, groups, expand),
+    }[backbone]
+
+
 class VitDecoder(nn.Module):
     def __init__(
         self,
@@ -11,7 +22,7 @@ class VitDecoder(nn.Module):
         groups=1,
         expand=False,
     ) -> None:
-        super().__init__()
+        super(VitDecoder, self).__init__()
         out_shape1 = features
         out_shape2 = features
         out_shape3 = features
@@ -62,22 +73,3 @@ class VitDecoder(nn.Module):
             bias=False,
             groups=groups,
         )
-
-
-def make_decoder(
-    backbone,
-    features,
-    groups=1,
-    expand=False,
-):
-    return {
-        "vitb16_384": VitDecoder(
-            [16, 32, 64, 128], features, groups, expand
-        ),  # ViT-B/16 - 84.6% Top1 (backbone),
-        "vitl16_384": VitDecoder(
-            [256, 512, 1024, 1024], features, groups, expand
-        ),  # ViT-L/16 - 85.0% Top1 (backbone)
-        "vitb_rn50_384": VitDecoder(
-            [256, 512, 768, 768], features, groups, expand
-        ),  # ViT-H/16 - 85.0% Top1 (backbone)
-    }[backbone]

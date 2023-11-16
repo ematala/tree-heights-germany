@@ -1,19 +1,14 @@
 import torch
 
-activations = {}
 
-
-def get_activation(name):
+def get_activation(name, activations):
     def hook(model, input, output):
         activations[name] = output
 
     return hook
 
 
-attention = {}
-
-
-def get_attention(name):
+def get_attention(name, attention):
     def hook(module, input, output):
         x = input[0]
         B, N, C = x.shape
