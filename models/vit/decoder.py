@@ -1,4 +1,5 @@
 from typing import List
+from torch import Tensor
 
 import torch.nn as nn
 
@@ -21,55 +22,30 @@ class VitDecoder(nn.Module):
         features: int,
         groups=1,
         expand=False,
+        blocks=4,
     ) -> None:
         super(VitDecoder, self).__init__()
-        out_shape1 = features
-        out_shape2 = features
-        out_shape3 = features
-        out_shape4 = features
 
-        if expand:
-            out_shape1 = features
-            out_shape2 = features * 2
-            out_shape3 = features * 4
-            out_shape4 = features * 8
-
-        self.layer1_rn = nn.Conv2d(
-            in_shape[0],
-            out_shape1,
-            kernel_size=3,
-            stride=1,
-            padding=1,
-            bias=False,
-            groups=groups,
+        out_shapes = (
+            [features * (2**i) for i in range(blocks)]
+            if expand
+            else [features] * blocks
         )
 
-        self.layer2_rn = nn.Conv2d(
-            in_shape[1],
-            out_shape2,
-            kernel_size=3,
-            stride=1,
-            padding=1,
-            bias=False,
-            groups=groups,
+        self.layers = nn.ModuleList(
+            [
+                nn.Conv2d(
+                    in_channels=in_shape[i],
+                    out_channels=out_shapes[i],
+                    kernel_size=3,
+                    stride=1,
+                    padding=1,
+                    bias=False,
+                    groups=groups,
+                )
+                for i in range(blocks)
+            ]
         )
 
-        self.layer3_rn = nn.Conv2d(
-            in_shape[2],
-            out_shape3,
-            kernel_size=3,
-            stride=1,
-            padding=1,
-            bias=False,
-            groups=groups,
-        )
-
-        self.layer4_rn = nn.Conv2d(
-            in_shape[3],
-            out_shape4,
-            kernel_size=3,
-            stride=1,
-            padding=1,
-            bias=False,
-            groups=groups,
-        )
+    def forward(self, skips: List[Tensor]) -> List[Tensor]:
+        return [self.layers[i](skips[i]) for i in range(len(skips))]

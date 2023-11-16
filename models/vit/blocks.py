@@ -258,3 +258,30 @@ class Transpose(nn.Module):
     def forward(self, x):
         x = x.transpose(self.dim0, self.dim1)
         return x
+
+
+def make_fusion_block(features: int, use_bn: bool):
+    return FeatureFusionBlock_custom(
+        features,
+        nn.ReLU(False),
+        deconv=False,
+        bn=use_bn,
+        expand=False,
+        align_corners=True,
+    )
+
+
+def make_output_conv(features: int):
+    return nn.Sequential(
+        nn.Conv2d(features, features // 2, kernel_size=3, stride=1, padding=1),
+        Interpolate(scale_factor=2, mode="bilinear", align_corners=True),
+        nn.Conv2d(features // 2, 32, kernel_size=3, stride=1, padding=1),
+        nn.ReLU(True),
+        nn.Conv2d(32, 1, kernel_size=1, stride=1, padding=0),
+        nn.ReLU(True),
+        nn.Identity(),
+    )
+
+
+def make_refinenets(features: int, blocks: int, use_bn: bool):
+    return nn.ModuleList([make_fusion_block(features, use_bn) for _ in range(blocks)])
