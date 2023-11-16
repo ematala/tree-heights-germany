@@ -2,7 +2,7 @@ import os
 
 from numpy import Inf
 
-from ..models.base import BaseModel
+from models.base import BaseModel
 
 
 class EarlyStopping:

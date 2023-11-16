@@ -2,7 +2,6 @@ import logging
 import os
 
 from dotenv import load_dotenv
-from torch import rand
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.tensorboard import SummaryWriter
@@ -29,7 +28,6 @@ def main():
     model_dir = os.getenv("MODEL_DIR")
     patch_dir = os.getenv("PATCH_DIR")
     gedi_dir = os.getenv("GEDI_DIR")
-    num_channels = 5
     image_size = 256
     random_state = 42
     num_workers = os.cpu_count() // 2
@@ -94,11 +92,6 @@ def main():
 
     # Create early stopping
     stopper = EarlyStopping(model, model_dir, config.model, patience)
-
-    # Add model graph to writer
-    # writer.add_graph(
-    #     model, rand(batch_size, num_channels, image_size, image_size).to(device)
-    # )
 
     # Initialize trained epochs
     trained_epochs = 0
