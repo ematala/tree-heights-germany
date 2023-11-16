@@ -1,6 +1,6 @@
 from .dataset import ForestDataset
 from .loss import filter, loss, loss_by_range
-from .misc import get_device, seed_everyting, send_telegram_message
+from .misc import get_device, seed_everyting, send_telegram_message, get_training_args
 from .models import test, train, validate
 from .pipeline import get_data
 from .plots import (

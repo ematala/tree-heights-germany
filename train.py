@@ -1,6 +1,5 @@
 import logging
 import os
-from argparse import ArgumentParser
 
 from dotenv import load_dotenv
 from torch import rand
@@ -13,6 +12,7 @@ from utils import (
     EarlyStopping,
     get_data,
     get_device,
+    get_training_args,
     load_model,
     loss,
     seed_everyting,
@@ -21,67 +21,6 @@ from utils import (
     train,
     validate,
 )
-
-
-def get_args():
-    """Get arguments from command line
-
-    Returns:
-        Namespace: Arguments
-    """
-    parser = ArgumentParser(
-        description="Train a selected model on predicting tree canopy heights"
-    )
-    parser.add_argument(
-        "--model",
-        choices=[
-            "unet",
-            "unetplusplus",
-            "vit",
-            "vit-base",
-            "vit-medium",
-            "vit-large",
-        ],
-        default="vit-medium",
-        help="Model type [default: vit-medium]",
-    )
-    parser.add_argument(
-        "--epochs", type=int, default=50, help="Training epochs [default: 50]"
-    )
-
-    parser.add_argument(
-        "--batch_size", type=int, default=64, help="Batch size [default: 64]"
-    )
-
-    parser.add_argument(
-        "--notify",
-        type=bool,
-        default=True,
-        help="Notify after training [default: True]",
-    )
-
-    parser.add_argument(
-        "--teacher",
-        type=str,
-        default=None,
-        help="Teacher model [default: None]",
-    )
-
-    parser.add_argument(
-        "--alpha",
-        type=float,
-        default=0.5,
-        help="Alpha for knowledge distillation [default: 0.5]",
-    )
-
-    parser.add_argument(
-        "--patience",
-        type=int,
-        default=10,
-        help="Patience for early stopping [default: 10]",
-    )
-
-    return parser.parse_args()
 
 
 def main():
@@ -97,7 +36,7 @@ def main():
     num_workers = os.cpu_count() // 2
     bins = list(range(0, 55, 5))
     device = get_device()
-    config = get_args()
+    config = get_training_args()
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
 
@@ -110,7 +49,10 @@ def main():
     patience = config.patience
 
     logging.info(
-        f"Starting training with {config.model} configuration for {epochs} epochs on device {device}"
+        f"Starting training...\n"
+        f"Configuration: {config.model}\n"
+        f"Epochs: {epochs}\n"
+        f"Device: {device}"
     )
 
     # Get data
