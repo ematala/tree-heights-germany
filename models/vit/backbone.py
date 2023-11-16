@@ -64,11 +64,11 @@ def _resize_pos_embed(self, posemb, gs_h, gs_w):
     return posemb
 
 
-def _get_unflatten_layer(img_size=[256, 256], patch_size=[16, 16]) -> nn.Unflatten:
+def get_unflatten_layer(img_size=[256, 256], patch_size=[16, 16]) -> nn.Unflatten:
     return nn.Unflatten(2, (img_size[0] // patch_size[0], img_size[1] // patch_size[1]))
 
 
-def _get_postprocessing_layers(
+def get_postprocessing_layers(
     img_size=[256, 256],
     patch_size=[16, 16],
     vit_features=128,
@@ -77,82 +77,84 @@ def _get_postprocessing_layers(
     start_index=1,
 ) -> nn.ModuleList:
     readout = _get_readout_operation(features, readout_op, start_index)
-    unflatten = _get_unflatten_layer(img_size, patch_size)
+    unflatten = get_unflatten_layer(img_size, patch_size)
 
-    return [
-        nn.Sequential(
-            readout[0],
-            Transpose(1, 2),
-            unflatten,
-            nn.Conv2d(
-                in_channels=vit_features,
-                out_channels=features[0],
-                kernel_size=1,
-                stride=1,
-                padding=0,
+    return nn.ModuleList(
+        [
+            nn.Sequential(
+                readout[0],
+                Transpose(1, 2),
+                unflatten,
+                nn.Conv2d(
+                    in_channels=vit_features,
+                    out_channels=features[0],
+                    kernel_size=1,
+                    stride=1,
+                    padding=0,
+                ),
+                nn.ConvTranspose2d(
+                    in_channels=features[0],
+                    out_channels=features[0],
+                    kernel_size=4,
+                    stride=4,
+                    padding=0,
+                    bias=True,
+                    dilation=1,
+                    groups=1,
+                ),
             ),
-            nn.ConvTranspose2d(
-                in_channels=features[0],
-                out_channels=features[0],
-                kernel_size=4,
-                stride=4,
-                padding=0,
-                bias=True,
-                dilation=1,
-                groups=1,
+            nn.Sequential(
+                readout[1],
+                Transpose(1, 2),
+                unflatten,
+                nn.Conv2d(
+                    in_channels=vit_features,
+                    out_channels=features[1],
+                    kernel_size=1,
+                    stride=1,
+                    padding=0,
+                ),
+                nn.ConvTranspose2d(
+                    in_channels=features[1],
+                    out_channels=features[1],
+                    kernel_size=2,
+                    stride=2,
+                    padding=0,
+                    bias=True,
+                    dilation=1,
+                    groups=1,
+                ),
             ),
-        ),
-        nn.Sequential(
-            readout[1],
-            Transpose(1, 2),
-            unflatten,
-            nn.Conv2d(
-                in_channels=vit_features,
-                out_channels=features[1],
-                kernel_size=1,
-                stride=1,
-                padding=0,
+            nn.Sequential(
+                readout[2],
+                Transpose(1, 2),
+                unflatten,
+                nn.Conv2d(
+                    in_channels=vit_features,
+                    out_channels=features[2],
+                    kernel_size=1,
+                    stride=1,
+                    padding=0,
+                ),
             ),
-            nn.ConvTranspose2d(
-                in_channels=features[1],
-                out_channels=features[1],
-                kernel_size=2,
-                stride=2,
-                padding=0,
-                bias=True,
-                dilation=1,
-                groups=1,
+            nn.Sequential(
+                readout[3],
+                Transpose(1, 2),
+                unflatten,
+                nn.Conv2d(
+                    in_channels=vit_features,
+                    out_channels=features[3],
+                    kernel_size=1,
+                    stride=1,
+                    padding=0,
+                ),
+                nn.Conv2d(
+                    in_channels=features[3],
+                    out_channels=features[3],
+                    kernel_size=3,
+                    stride=2,
+                    padding=1,
+                ),
             ),
-        ),
-        nn.Sequential(
-            readout[2],
-            Transpose(1, 2),
-            unflatten,
-            nn.Conv2d(
-                in_channels=vit_features,
-                out_channels=features[2],
-                kernel_size=1,
-                stride=1,
-                padding=0,
-            ),
-        ),
-        nn.Sequential(
-            readout[3],
-            Transpose(1, 2),
-            unflatten,
-            nn.Conv2d(
-                in_channels=vit_features,
-                out_channels=features[3],
-                kernel_size=1,
-                stride=1,
-                padding=0,
-            ),
-            nn.Conv2d(
-                in_channels=features[3],
-                out_channels=features[3],
-                kernel_size=3,
-                stride=2,
-                padding=1,
-            ),
-        ),
-    ]
+        ]
+    )

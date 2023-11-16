@@ -2,6 +2,7 @@ from .unet import Unet
 from .unetplusplus import UnetPlusPlus
 from .vit import Vit
 from .vitnet import VitNet
+from .base import BaseModel
 
 
 def make_model(name: str = "vit-medium"):

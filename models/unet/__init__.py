@@ -3,10 +3,11 @@ from typing import Any, Dict, List, Optional, Union
 from segmentation_models_pytorch import Unet as SegmentationUnet
 from torch import Tensor
 
+from ..base import BaseModel
 from .decoder import UnetDecoder
 
 
-class Unet(SegmentationUnet):
+class Unet(SegmentationUnet, BaseModel):
     def __init__(
         self,
         encoder_name: str = "efficientnet-b2",

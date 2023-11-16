@@ -7,8 +7,8 @@ from torch.nn import Module
 
 from .backbone import (
     _forward_flex,
-    _get_postprocessing_layers,
-    _get_unflatten_layer,
+    get_postprocessing_layers,
+    get_unflatten_layer,
     _resize_pos_embed,
 )
 from .hooks import get_activation, get_attention
@@ -72,9 +72,9 @@ class VitEncoder(nn.Module):
                     get_attention(str(i + 1), self.attention)
                 )
 
-        self.unflatten = _get_unflatten_layer(img_size, patch_size)
+        self.unflatten = get_unflatten_layer(img_size, patch_size)
 
-        self.postprocessing = _get_postprocessing_layers(
+        self.postprocessing = get_postprocessing_layers(
             img_size, patch_size, vit_features, features, readout_op, start_index
         )
 

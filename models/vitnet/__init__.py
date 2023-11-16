@@ -1,15 +1,15 @@
 from typing import Any
 
 from torch import Tensor
-from torch.nn import Module
 from transformers import ViTConfig
 
+from ..base import BaseModel
 from .decoder import VitDecoder
 from .encoder import VitEncoder
 from .output import OutputHead
 
 
-class VitNet(Module):
+class VitNet(BaseModel):
     def __init__(
         self,
         image_size: int = 256,

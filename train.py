@@ -13,7 +13,6 @@ from utils import (
     get_data,
     get_device,
     get_training_args,
-    load_model,
     loss,
     seed_everyting,
     send_telegram_message,
@@ -83,7 +82,9 @@ def main():
 
     if config.teacher:
         logging.info(f"Loading teacher model {config.teacher}")
-        teacher = load_model(os.path.join(model_dir, config.teacher), device)
+        raise NotImplementedError
+        # teacher = load_model(os.path.join(model_dir, config.teacher), device)
+        # todo: load teacher model
 
     # Create scheduler
     scheduler = CosineAnnealingLR(optimizer, epochs)
@@ -95,9 +96,9 @@ def main():
     stopper = EarlyStopping(model, model_dir, config.model, patience)
 
     # Add model graph to writer
-    writer.add_graph(
-        model, rand(batch_size, num_channels, image_size, image_size).to(device)
-    )
+    # writer.add_graph(
+    #     model, rand(batch_size, num_channels, image_size, image_size).to(device)
+    # )
 
     # Initialize trained epochs
     trained_epochs = 0

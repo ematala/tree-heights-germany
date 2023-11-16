@@ -1,6 +1,6 @@
-import torch.nn as nn
 from torch import Tensor
 
+from ..base import BaseModel
 from .blocks import (
     make_output_conv,
     make_refinenets,
@@ -9,7 +9,7 @@ from .decoder import make_decoder
 from .encoder import make_encoder
 
 
-class Vit(nn.Module):
+class Vit(BaseModel):
     def __init__(
         self,
         backbone="vitb16_256",

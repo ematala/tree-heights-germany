@@ -8,7 +8,6 @@ from pandas import DataFrame
 from utils import (
     get_data,
     get_device,
-    load_model,
     loss,
     plot_predictions,
     plot_true_vs_predicted_histogram,
@@ -78,9 +77,12 @@ def main():
 
     # Load all models
     models = {
-        filename[: -len(".pt")]: load_model(os.path.join(model_dir, filename), device)
-        for filename in [f for f in os.listdir(model_dir) if f.endswith(".pt")]
+        # filename[: -len(".pt")]: load_model(os.path.join(model_dir, filename), device)
+        # for filename in [f for f in os.listdir(model_dir) if f.endswith(".pt")]
+        # todo: load models
     }
+
+    raise NotImplementedError
 
     # Initialize results DataFrame
     results = DataFrame(columns=["Test Loss", "MAE", "RMSE", "Test Loss By Range"])

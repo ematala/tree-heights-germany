@@ -15,7 +15,6 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 from .misc import get_normalized_image, get_window_bounds
-from .io import load_model
 
 
 def predict_patch(
@@ -100,6 +99,7 @@ def predict_batch(
 
 
 def predict_all_images(
+    model: Module,
     img_dir: str,
     patch_size: int,
     model_path: str,
@@ -109,7 +109,6 @@ def predict_all_images(
     regexp = r"L15\-\d{4}E\-\d{4}N\.tif"
     images = [f for f in os.listdir(img_dir) if re.match(regexp, f)]
 
-    model = load_model(model_path)
     fn = partial(model)
     desc = "Predicting images"
 

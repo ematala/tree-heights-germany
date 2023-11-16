@@ -1,9 +1,8 @@
 import os
 
 from numpy import Inf
-from torch.nn import Module
 
-from .io import save_model
+from ..models.base import BaseModel
 
 
 class EarlyStopping:
@@ -11,7 +10,7 @@ class EarlyStopping:
 
     def __init__(
         self,
-        model: Module,
+        model: BaseModel,
         model_dir: str,
         model_name: str,
         patience: int = 10,
@@ -38,7 +37,7 @@ class EarlyStopping:
     def __call__(self, score: float):
         if self.best_score is None:
             self.best_score = score
-            save_model(self.model, self.path)
+            self.model.save(self.path)
         elif score > self.best_score + self.delta:
             self.counter += 1
             if self.counter >= self.patience:
@@ -46,4 +45,4 @@ class EarlyStopping:
         else:
             self.best_score = score
             self.counter = 0
-            save_model(self.model, self.path)
+            self.model.save(self.path)

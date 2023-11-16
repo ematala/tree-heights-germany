@@ -10,4 +10,3 @@ from .plots import (
 )
 from .predictions import predict_all_images, predict_batch
 from .stopping import EarlyStopping
-from .io import load_model, save_model
