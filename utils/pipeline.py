@@ -5,8 +5,9 @@ from pandas import DataFrame, Series
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, Dataset, WeightedRandomSampler
 
+from preprocessing import Preprocessor
+
 from .dataset import ForestDataset
-from .preprocessing import Preprocessor
 
 
 def get_normalized_sampling_weights(

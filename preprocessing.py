@@ -18,7 +18,7 @@ from rasterio.features import rasterize
 from shapely.geometry import box
 from tqdm import tqdm
 
-from .misc import (
+from utils import (
     get_label_bins,
     get_normalized_image,
     get_window_bounds,
