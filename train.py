@@ -1,3 +1,4 @@
+import argparse
 import logging
 import os
 
@@ -6,19 +7,66 @@ from torch.optim import AdamW
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.tensorboard import SummaryWriter
 
-from models import make_model
-from utils import (
-    EarlyStopping,
-    get_data,
-    get_device,
-    get_training_args,
-    loss,
-    seed_everyting,
-    send_telegram_message,
-    test,
-    train,
-    validate,
-)
+from models import get_all_models, make_model
+from utils.loss import loss
+from utils.misc import get_device, seed_everyting, send_telegram_message
+from utils.models import test, train, validate
+from utils.pipeline import get_data
+from utils.stopping import EarlyStopping
+
+
+def get_training_args():
+    """Get arguments from command line
+
+    Returns:
+        Namespace: Arguments
+    """
+    parser = argparse.ArgumentParser(
+        description="Train a selected model on predicting tree canopy heights"
+    )
+    parser.add_argument(
+        "--model",
+        choices=get_all_models(),
+        default="vit",
+        help="Model type [default: vit]",
+    )
+    parser.add_argument(
+        "--epochs", type=int, default=50, help="Training epochs [default: 50]"
+    )
+
+    parser.add_argument(
+        "--batch_size", type=int, default=64, help="Batch size [default: 64]"
+    )
+
+    parser.add_argument(
+        "--notify",
+        type=bool,
+        default=True,
+        help="Notify after training [default: True]",
+    )
+
+    parser.add_argument(
+        "--teacher",
+        type=str,
+        default=None,
+        help="Teacher model [default: None]",
+    )
+
+    parser.add_argument(
+        "--alpha",
+        type=float,
+        default=0.5,
+        help="Alpha for knowledge distillation [default: 0.5]",
+    )
+
+    parser.add_argument(
+        "--patience",
+        type=int,
+        default=10,
+        help="Patience for early stopping [default: 10]",
+    )
+
+    return parser.parse_args()
 
 
 def main():

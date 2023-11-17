@@ -5,20 +5,19 @@ from argparse import ArgumentParser
 from dotenv import load_dotenv
 from pandas import DataFrame
 
-from utils import (
-    get_data,
-    get_device,
-    loss,
+from utils.loss import loss
+from utils.misc import get_device, seed_everyting
+from utils.models import test
+from utils.pipeline import get_data
+from utils.plots import (
     plot_predictions,
     plot_true_vs_predicted_histogram,
     plot_true_vs_predicted_scatter,
-    predict_batch,
-    seed_everyting,
-    test,
 )
+from utils.predictions import predict_batch
 
 
-def get_args():
+def get_evaluation_args():
     """Get arguments from command line
 
     Returns:
@@ -54,7 +53,7 @@ def main():
     num_workers = os.cpu_count() // 2
     bins = list(range(0, 55, 5))
     device = get_device()
-    config = get_args()
+    config = get_evaluation_args()
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
 

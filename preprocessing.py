@@ -19,7 +19,7 @@ from rasterio.features import rasterize
 from shapely.geometry import box
 from tqdm import tqdm
 
-from utils import (
+from utils.misc import (
     get_label_bins,
     get_normalized_image,
     get_window_bounds,
@@ -83,7 +83,7 @@ class Preprocessor:
             & (self.gedi.num_detectedmodes > 0)
             & (self.gedi.degrade_flag == 0)
             & (self.gedi.stale_return_flag == 0)
-            & (self.gedi.landsat_treecover > 0)
+            # & (self.gedi.landsat_treecover > 0)
             & (self.gedi.rh98 >= 0)
             & (self.gedi.rh98 <= 70)
         ]

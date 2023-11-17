@@ -1,4 +1,3 @@
-import argparse
 import os
 from random import seed as pyseed
 from typing import List, Optional, Tuple
@@ -13,8 +12,6 @@ from torch.backends.mps import is_available as mps_available
 from torch.cuda import is_available as cuda_available
 from torch.cuda import manual_seed as cseed
 from torch.cuda import manual_seed_all as cseed_all
-
-from models import get_all_models
 
 
 def get_window_bounds(
@@ -100,57 +97,3 @@ def send_telegram_message(message: str):
         f"https://api.telegram.org/bot{token}/sendMessage",
         {"chat_id": chat_id, "text": message},
     )
-
-
-def get_training_args():
-    """Get arguments from command line
-
-    Returns:
-        Namespace: Arguments
-    """
-    parser = argparse.ArgumentParser(
-        description="Train a selected model on predicting tree canopy heights"
-    )
-    parser.add_argument(
-        "--model",
-        choices=get_all_models(),
-        default="vit",
-        help="Model type [default: vit]",
-    )
-    parser.add_argument(
-        "--epochs", type=int, default=50, help="Training epochs [default: 50]"
-    )
-
-    parser.add_argument(
-        "--batch_size", type=int, default=64, help="Batch size [default: 64]"
-    )
-
-    parser.add_argument(
-        "--notify",
-        type=bool,
-        default=True,
-        help="Notify after training [default: True]",
-    )
-
-    parser.add_argument(
-        "--teacher",
-        type=str,
-        default=None,
-        help="Teacher model [default: None]",
-    )
-
-    parser.add_argument(
-        "--alpha",
-        type=float,
-        default=0.5,
-        help="Alpha for knowledge distillation [default: 0.5]",
-    )
-
-    parser.add_argument(
-        "--patience",
-        type=int,
-        default=10,
-        help="Patience for early stopping [default: 10]",
-    )
-
-    return parser.parse_args()
