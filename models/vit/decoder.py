@@ -1,25 +1,31 @@
 from typing import List
-from torch import Tensor
 
 import torch.nn as nn
+from torch import Tensor
+
+from .backbone import make_feature_dims
 
 
 def make_decoder(
-    backbone,
-    features=128,
+    embed_dim: int,
+    blocks: int = 4,
     groups=1,
     expand=False,
 ):
-    return {
-        "vitb16_256": VitDecoder([64, 96, 128, 128], features, groups, expand),
-    }[backbone]
+    return VitDecoder(
+        in_shape=make_feature_dims(embed_dim, blocks),
+        embed_dim=embed_dim,
+        groups=groups,
+        expand=expand,
+        blocks=blocks,
+    )
 
 
 class VitDecoder(nn.Module):
     def __init__(
         self,
         in_shape: List[int],
-        features: int,
+        embed_dim: int,
         groups=1,
         expand=False,
         blocks=4,
@@ -27,9 +33,9 @@ class VitDecoder(nn.Module):
         super(VitDecoder, self).__init__()
 
         out_shapes = (
-            [features * (2**i) for i in range(blocks)]
+            [embed_dim * (2**i) for i in range(blocks)]
             if expand
-            else [features] * blocks
+            else [embed_dim] * blocks
         )
 
         self.layers = nn.ModuleList(

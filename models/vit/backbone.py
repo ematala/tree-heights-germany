@@ -1,4 +1,5 @@
 import math
+from typing import List
 
 import torch
 import torch.nn as nn
@@ -71,8 +72,8 @@ def get_unflatten_layer(img_size=[256, 256], patch_size=[16, 16]) -> nn.Unflatte
 def get_postprocessing_layers(
     img_size=[256, 256],
     patch_size=[16, 16],
-    vit_features=128,
-    features=[64, 96, 128, 128],
+    embed_dim=192,
+    features=[24, 48, 96, 192],
     readout_op="ignore",
     start_index=1,
 ) -> nn.ModuleList:
@@ -86,7 +87,7 @@ def get_postprocessing_layers(
                 Transpose(1, 2),
                 unflatten,
                 nn.Conv2d(
-                    in_channels=vit_features,
+                    in_channels=embed_dim,
                     out_channels=features[0],
                     kernel_size=1,
                     stride=1,
@@ -108,7 +109,7 @@ def get_postprocessing_layers(
                 Transpose(1, 2),
                 unflatten,
                 nn.Conv2d(
-                    in_channels=vit_features,
+                    in_channels=embed_dim,
                     out_channels=features[1],
                     kernel_size=1,
                     stride=1,
@@ -130,7 +131,7 @@ def get_postprocessing_layers(
                 Transpose(1, 2),
                 unflatten,
                 nn.Conv2d(
-                    in_channels=vit_features,
+                    in_channels=embed_dim,
                     out_channels=features[2],
                     kernel_size=1,
                     stride=1,
@@ -142,7 +143,7 @@ def get_postprocessing_layers(
                 Transpose(1, 2),
                 unflatten,
                 nn.Conv2d(
-                    in_channels=vit_features,
+                    in_channels=embed_dim,
                     out_channels=features[3],
                     kernel_size=1,
                     stride=1,
@@ -158,3 +159,7 @@ def get_postprocessing_layers(
             ),
         ]
     )
+
+
+def make_feature_dims(last_dim: int = 192, blocks: int = 4) -> List[int]:
+    return [last_dim // (2 ** (blocks - idx - 1)) for idx in range(blocks)]

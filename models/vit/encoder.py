@@ -7,31 +7,51 @@ from torch.nn import Module
 
 from .backbone import (
     _forward_flex,
+    _resize_pos_embed,
     get_postprocessing_layers,
     get_unflatten_layer,
-    _resize_pos_embed,
+    make_feature_dims,
 )
 from .hooks import get_activation, get_attention
 
 
 def make_encoder(
     backbone: str,
+    embed_dim: int,
     readout_op: str = "ignore",
     enable_attention_hooks: bool = False,
+    **kwargs,
 ):
-    config = {
-        "img_size": 256,
-        "in_chans": 5,
-        "patch_size": 16,
-        "num_heads": 8,
-        "embed_dim": 128,
-    }
     return {
-        "vitb16_256": VitEncoder(
-            model=timm.create_model("vit_base_patch16_384", **config),
-            vit_features=128,
-            features=[64, 96, 128, 128],
+        "vit_tiny_patch16_256": VitEncoder(
+            model=timm.create_model("vit_tiny_patch16_224", **kwargs),
+            embed_dim=embed_dim,
+            feature_dims=make_feature_dims(embed_dim),
             hooks=[2, 5, 8, 11],
+            readout_op=readout_op,
+            enable_attention_hooks=enable_attention_hooks,
+        ),
+        "vit_small_patch16_256": VitEncoder(
+            model=timm.create_model("vit_small_patch16_224", **kwargs),
+            embed_dim=embed_dim,
+            feature_dims=make_feature_dims(embed_dim),
+            hooks=[2, 5, 8, 11],
+            readout_op=readout_op,
+            enable_attention_hooks=enable_attention_hooks,
+        ),
+        "vit_base_patch16_256": VitEncoder(
+            model=timm.create_model("vit_base_patch16_224", **kwargs),
+            embed_dim=embed_dim,
+            feature_dims=make_feature_dims(embed_dim),
+            hooks=[2, 5, 8, 11],
+            readout_op=readout_op,
+            enable_attention_hooks=enable_attention_hooks,
+        ),
+        "vit_large_patch16_256": VitEncoder(
+            model=timm.create_model("vit_large_patch16_224", **kwargs),
+            embed_dim=embed_dim,
+            feature_dims=make_feature_dims(embed_dim),
+            hooks=[5, 11, 17, 23],
             readout_op=readout_op,
             enable_attention_hooks=enable_attention_hooks,
         ),
@@ -42,8 +62,8 @@ class VitEncoder(nn.Module):
     def __init__(
         self,
         model: Module,
-        vit_features=128,
-        features=[64, 96, 128, 128],
+        embed_dim=192,
+        feature_dims=[24, 48, 96, 192],
         hooks=[2, 5, 8, 11],
         img_size=[256, 256],
         patch_size=[16, 16],
@@ -75,7 +95,7 @@ class VitEncoder(nn.Module):
         self.unflatten = get_unflatten_layer(img_size, patch_size)
 
         self.postprocessing = get_postprocessing_layers(
-            img_size, patch_size, vit_features, features, readout_op, start_index
+            img_size, patch_size, embed_dim, feature_dims, readout_op, start_index
         )
 
         self.model._resize_pos_embed = types.MethodType(_resize_pos_embed, self.model)

@@ -27,8 +27,8 @@ def get_training_args():
     parser.add_argument(
         "--model",
         choices=get_all_models(),
-        default="vit",
-        help="Model type [default: vit]",
+        default="vit-tiny",
+        help="Model type [default: vit-tiny]",
     )
     parser.add_argument(
         "--epochs", type=int, default=50, help="Training epochs [default: 50]"
