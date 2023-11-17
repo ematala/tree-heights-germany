@@ -4,11 +4,31 @@ from .vit import Vit
 from .vitnet import VitNet
 from .base import BaseModel
 
+_models = {
+    "unet": Unet(),
+    "unetplusplus": UnetPlusPlus(),
+    "vit": Vit(),
+    "vit-base": VitNet(
+        num_attention_heads=8,
+        hidden_size=128,
+        intermediate_size=512,
+    ),
+    "vit-medium": VitNet(
+        num_attention_heads=12,
+        hidden_size=192,
+        intermediate_size=768,
+    ),
+    "vit-large": VitNet(
+        num_attention_heads=16, hidden_size=256, intermediate_size=1024
+    ),
+}
 
-def make_model(name: str = "vit-medium"):
-    return {
-        "vit-medium": Vit(features=128),
-        # "large": Vit(features=256, backbone="vitl16_384"),
-        # "deit": Vit(features=128, backbone="vit_deit_base_patch16_384"),
-        # "hybrid": Vit(features=128, backbone="vitb_rn50_384"),
-    }[name]
+
+def get_all_models():
+    return list(_models.keys())
+
+
+def make_model(name: str):
+    if name not in _models:
+        raise NotImplementedError(f"Model {name} not implemented")
+    return _models[name]

@@ -14,6 +14,8 @@ from torch.cuda import is_available as cuda_available
 from torch.cuda import manual_seed as cseed
 from torch.cuda import manual_seed_all as cseed_all
 
+from models import get_all_models
+
 
 def get_window_bounds(
     idx: int,
@@ -111,16 +113,9 @@ def get_training_args():
     )
     parser.add_argument(
         "--model",
-        choices=[
-            "unet",
-            "unetplusplus",
-            "vit",
-            "vit-base",
-            "vit-medium",
-            "vit-large",
-        ],
-        default="vit-medium",
-        help="Model type [default: vit-medium]",
+        choices=get_all_models(),
+        default="vit",
+        help="Model type [default: vit]",
     )
     parser.add_argument(
         "--epochs", type=int, default=50, help="Training epochs [default: 50]"

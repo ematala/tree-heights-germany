@@ -45,7 +45,7 @@ def get_args():
 def main():
     load_dotenv()
     img_dir = os.getenv("IMG_DIR")
-    model_dir = os.getenv("MODEL_DIR")
+    weights_dir = os.getenv("WEIGHTS_DIR")
     patch_dir = os.getenv("PATCH_DIR")
     results_dir = os.getenv("RESULTS_DIR")
     gedi_dir = os.getenv("GEDI_DIR")
@@ -77,8 +77,8 @@ def main():
 
     # Load all models
     models = {
-        # filename[: -len(".pt")]: load_model(os.path.join(model_dir, filename), device)
-        # for filename in [f for f in os.listdir(model_dir) if f.endswith(".pt")]
+        # filename[: -len(".pt")]: load_model(os.path.join(weights_dir, filename), device)
+        # for filename in [f for f in os.listdir(weights_dir) if f.endswith(".pt")]
         # todo: load models
     }
 

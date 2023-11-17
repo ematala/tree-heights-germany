@@ -25,7 +25,7 @@ def main():
     load_dotenv()
     img_dir = os.getenv("IMG_DIR")
     log_dir = os.getenv("LOG_DIR")
-    model_dir = os.getenv("MODEL_DIR")
+    weights_dir = os.getenv("WEIGHTS_DIR")
     patch_dir = os.getenv("PATCH_DIR")
     gedi_dir = os.getenv("GEDI_DIR")
     image_size = 256
@@ -81,7 +81,7 @@ def main():
     if config.teacher:
         logging.info(f"Loading teacher model {config.teacher}")
         raise NotImplementedError
-        # teacher = load_model(os.path.join(model_dir, config.teacher), device)
+        # teacher = load_model(os.path.join(weights_dir, config.teacher), device)
         # todo: load teacher model
 
     # Create scheduler
@@ -91,7 +91,7 @@ def main():
     writer = SummaryWriter(f"{log_dir}/{config.model}")
 
     # Create early stopping
-    stopper = EarlyStopping(model, model_dir, config.model, patience)
+    stopper = EarlyStopping(model, weights_dir, config.model, patience)
 
     # Initialize trained epochs
     trained_epochs = 0

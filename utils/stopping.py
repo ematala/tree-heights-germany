@@ -11,7 +11,7 @@ class EarlyStopping:
     def __init__(
         self,
         model: BaseModel,
-        model_dir: str,
+        weights_dir: str,
         model_name: str,
         patience: int = 10,
         delta: float = 0.0,
@@ -26,7 +26,7 @@ class EarlyStopping:
                            Default: 0.0
         """
         self.model = model
-        self.path = os.path.join(model_dir, f"{model_name}.pt")
+        self.path = os.path.join(weights_dir, f"{model_name}.pt")
         self.patience = patience
         self.delta = delta
 
