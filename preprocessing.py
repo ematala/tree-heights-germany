@@ -7,6 +7,7 @@ from itertools import chain
 from multiprocessing import get_context
 from typing import List
 
+from dotenv import load_dotenv
 from geopandas import GeoDataFrame, points_from_xy
 from h5py import File as HDF5File
 from numpy import any as npany
@@ -222,6 +223,7 @@ def get_args():
 
 
 def main():
+    load_dotenv()
     args = get_args()
     Preprocessor(
         img_dir=os.getenv("IMG_DIR"),
