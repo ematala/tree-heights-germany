@@ -6,10 +6,9 @@ from .base import BaseModel
 _models = {
     "unet": Unet(),
     "unetplusplus": UnetPlusPlus(),
-    "vit-tiny": Vit(backbone="vit_tiny_patch16_256", embed_dim=192),
-    "vit-small": Vit(backbone="vit_small_patch16_256", embed_dim=384),
-    "vit-base": Vit(backbone="vit_base_patch16_256", embed_dim=768),
-    "vit-large": Vit(backbone="vit_large_patch16_256", embed_dim=1024),
+    "vit-tiny": Vit(backbone="vit_tiny_patch16_256", embed_dim=128, num_heads=4),
+    "vit-small": Vit(backbone="vit_small_patch16_256", embed_dim=192, num_heads=6),
+    "vit-base": Vit(backbone="vit_base_patch16_256", embed_dim=256, num_heads=8),
 }
 
 
