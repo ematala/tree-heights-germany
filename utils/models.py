@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from numpy import ndarray
 from torch import (
     Tensor,
+    cat,
     from_numpy,
     isnan,
     no_grad,
@@ -187,6 +188,12 @@ def test(
     # Average losses
     for key in metrics.keys():
         metrics[key] /= len(loader)
+
+    metrics["loss_by_range"] = metrics.get("loss_by_range").cpu().numpy()
+
+    # Convert to numpy arrays
+    for key in predictions.keys():
+        predictions[key] = cat(predictions.get(key)).cpu().numpy()
 
     return dict(**metrics, **predictions)
 
