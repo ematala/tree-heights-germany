@@ -24,7 +24,9 @@ def make_encoder(
 ):
     return {
         "vit_tiny_patch16_256": VitEncoder(
-            model=timm.create_model("vit_tiny_patch16_224", **kwargs),
+            model=timm.create_model(
+                "vit_tiny_patch16_224", embed_dim=embed_dim, **kwargs
+            ),
             embed_dim=embed_dim,
             feature_dims=make_feature_dims(embed_dim),
             hooks=[2, 5, 8, 11],
@@ -32,7 +34,9 @@ def make_encoder(
             enable_attention_hooks=enable_attention_hooks,
         ),
         "vit_small_patch16_256": VitEncoder(
-            model=timm.create_model("vit_small_patch16_224", **kwargs),
+            model=timm.create_model(
+                "vit_small_patch16_224", embed_dim=embed_dim, **kwargs
+            ),
             embed_dim=embed_dim,
             feature_dims=make_feature_dims(embed_dim),
             hooks=[2, 5, 8, 11],
@@ -40,18 +44,12 @@ def make_encoder(
             enable_attention_hooks=enable_attention_hooks,
         ),
         "vit_base_patch16_256": VitEncoder(
-            model=timm.create_model("vit_base_patch16_224", **kwargs),
+            model=timm.create_model(
+                "vit_base_patch16_224", embed_dim=embed_dim, **kwargs
+            ),
             embed_dim=embed_dim,
             feature_dims=make_feature_dims(embed_dim),
             hooks=[2, 5, 8, 11],
-            readout_op=readout_op,
-            enable_attention_hooks=enable_attention_hooks,
-        ),
-        "vit_large_patch16_256": VitEncoder(
-            model=timm.create_model("vit_large_patch16_224", **kwargs),
-            embed_dim=embed_dim,
-            feature_dims=make_feature_dims(embed_dim),
-            hooks=[5, 11, 17, 23],
             readout_op=readout_op,
             enable_attention_hooks=enable_attention_hooks,
         ),

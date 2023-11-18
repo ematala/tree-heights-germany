@@ -24,10 +24,10 @@ class Vit(BaseModel):
     ):
         super(Vit, self).__init__()
         self.encoder = make_encoder(
-            backbone,
-            embed_dim,
-            readout_op,
-            enable_attention_hooks,
+            backbone=backbone,
+            embed_dim=embed_dim,
+            readout_op=readout_op,
+            enable_attention_hooks=enable_attention_hooks,
             img_size=img_size,
             in_chans=in_chans,
             **kwargs,
