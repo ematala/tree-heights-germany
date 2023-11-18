@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 from numpy import ndarray
 from torch import (
     Tensor,
-    cat,
     from_numpy,
     isnan,
     no_grad,
@@ -75,25 +74,19 @@ def validate(
     device: Device,
     epoch: int,
     writer: SummaryWriter,
-    ranges: Optional[List[int]] = list(range(0, 55, 5)),
 ) -> float:
     # Set model to evaluation mode
     model.eval()
 
-    # Create pairwise tuples or ranges from bins
-    range_bins = list(zip(ranges[:-1], ranges[1:]))
-    loss_by_range: Tensor = zeros(len(range_bins)).to(device)
-
-    # User defined loss
-    loss: float = 0
-
-    # MAE loss
-    mae_loss: float = 0
+    # define loss functions
     mae = L1Loss()
-
-    # RMSE loss
-    rmse_loss: float = 0
     mse = MSELoss()
+
+    metrics = {
+        "total": 0,
+        "mae": 0,
+        "rmse": 0,
+    }
 
     with no_grad():
         for _, (inputs, targets) in enumerate(
@@ -105,30 +98,18 @@ def validate(
 
             filtered_outputs, filtered_targets = filter(outputs, targets)
 
-            loss += criterion(filtered_outputs, filtered_targets).item()
-            mae_loss += mae(filtered_outputs, filtered_targets).item()
-            rmse_loss += sqrt(mse(filtered_outputs, filtered_targets).item())
-
-            batch_loss_by_range = range_loss(outputs, targets, range_bins)
-            loss_by_range += where(isnan(batch_loss_by_range), 0, batch_loss_by_range)
+            metrics["total"] += criterion(filtered_outputs, filtered_targets).item()
+            metrics["mae"] += mae(filtered_outputs, filtered_targets).item()
+            metrics["rmse"] += sqrt(mse(filtered_outputs, filtered_targets).item())
 
     # Average losses
-    loss /= len(loader)
-    mae_loss /= len(loader)
-    rmse_loss /= len(loader)
-    loss_by_range /= len(loader)
+    for key in metrics.keys():
+        metrics[key] /= len(loader)
 
     # Add loss to writer
-    writer.add_scalar("Loss/val/total", loss, epoch)
-    writer.add_scalar("Loss/val/MAE", mae_loss, epoch)
-    writer.add_scalar("Loss/val/RMSE", rmse_loss, epoch)
-
-    # Add loss_by_range to writer
-    loss_dict = {
-        f"{lower}-{upper}": loss
-        for (lower, upper), loss in zip(range_bins, loss_by_range.cpu().numpy())
-    }
-    writer.add_scalars("Loss/val/range", loss_dict, epoch)
+    writer.add_scalar("Loss/val/total", metrics.get("total"), epoch)
+    writer.add_scalar("Loss/val/MAE", metrics.get("mae"), epoch)
+    writer.add_scalar("Loss/val/RMSE", metrics.get("rmse"), epoch)
 
     # Add images to writer
     # Since the images never change, only add them once
@@ -147,13 +128,12 @@ def validate(
 
     logging.info(
         f"Validation epoch {epoch + 1}\n"
-        f"Total loss: {loss:>8f}\n"
-        f"MAE loss: {mae_loss:>8f}\n"
-        f"RMSE loss: {rmse_loss:>8f}\n"
-        f"Losses by range: {loss_by_range.cpu().numpy()}"
+        f"Total loss: {metrics.get('total'):>8f}\n"
+        f"MAE loss: {metrics.get('mae'):>8f}\n"
+        f"RMSE loss: {metrics.get('rmse'):>8f}\n"
     )
 
-    return loss
+    return metrics.get("total")
 
 
 def test(
@@ -167,7 +147,6 @@ def test(
 
     # Create pairwise tuples or ranges from bins
     range_bins = list(zip(ranges[:-1], ranges[1:]))
-    loss_by_range: Tensor = zeros(len(range_bins)).to(device)
 
     metrics = {
         "total": 0,
@@ -177,24 +156,13 @@ def test(
     }
 
     predictions = {
-        "true": [],
+        "targets": [],
         "predicted": [],
     }
 
-    # User defined loss
-    loss: float = 0
-
-    # MAE loss
-    mae_loss: float = 0
+    # define loss functions
     mae = L1Loss()
-
-    # RMSE loss
-    rmse_loss: float = 0
     mse = MSELoss()
-
-    # Initialize arrays to hold targets and predictions
-    all_targets = []
-    all_predictions = []
 
     with no_grad():
         for _, (inputs, targets) in enumerate(tqdm(loader, "Testing")):
@@ -204,43 +172,23 @@ def test(
 
             filtered_outputs, filtered_targets = filter(outputs, targets)
 
-            all_targets.append(filtered_targets.cpu())
-            all_predictions.append(filtered_outputs.cpu())
-
-            predictions["true"].append(filtered_targets.cpu())
-            predictions["predicted"].append(filtered_outputs.cpu())
-
             metrics["total"] += criterion(filtered_outputs, filtered_targets).item()
             metrics["mae"] += mae(filtered_outputs, filtered_targets).item()
             metrics["rmse"] += sqrt(mse(filtered_outputs, filtered_targets).item())
-
-            loss += criterion(filtered_outputs, filtered_targets).item()
-            mae_loss += mae(filtered_outputs, filtered_targets).item()
-            rmse_loss += sqrt(mse(filtered_outputs, filtered_targets).item())
 
             batch_loss_by_range = range_loss(outputs, targets, range_bins)
             metrics["loss_by_range"] += where(
                 isnan(batch_loss_by_range), 0, batch_loss_by_range
             )
-            loss_by_range += where(isnan(batch_loss_by_range), 0, batch_loss_by_range)
+
+            predictions["targets"].append(filtered_targets.cpu())
+            predictions["predicted"].append(filtered_outputs.cpu())
 
     # Average losses
     for key in metrics.keys():
         metrics[key] /= len(loader)
 
-    loss /= len(loader)
-    mae_loss /= len(loader)
-    rmse_loss /= len(loader)
-    loss_by_range /= len(loader)
-
-    return (
-        loss,
-        mae_loss,
-        rmse_loss,
-        loss_by_range.cpu().numpy(),
-        cat(all_targets).cpu().numpy(),
-        cat(all_predictions).cpu().numpy(),
-    )
+    return dict(**metrics, **predictions)
 
 
 def apply_colormap(img: Tensor) -> Tensor:

@@ -87,35 +87,33 @@ def main():
     # Test each model
     for model_name, model in models.items():
         logging.info(f"Testing model {model_name}")
-        (
-            test_loss,
-            test_mae,
-            test_rmse,
-            test_loss_by_range,
-            labels,
-            predictions,
-        ) = test(model, test_dl, loss, device, bins)
+        metrics = test(model, test_dl, loss, device, bins)
 
-        results.loc[model_name] = [test_loss, test_mae, test_rmse, test_loss_by_range]
+        results.loc[model_name] = [
+            metrics.get("total"),
+            metrics.get("mae"),
+            metrics.get("rmse"),
+            metrics.get("loss_by_range"),
+        ]
 
         logging.info(
-            f"Test loss: {test_loss:>8f}\n"
-            f"MAE: {test_mae:>8f}\n"
-            f"RMSE: {test_rmse:>8f}\n"
+            f"Test loss: {metrics.get('total'):>8f}\n"
+            f"MAE: {metrics.get('mae'):>8f}\n"
+            f"RMSE: {metrics.get('rmse'):>8f}\n"
             f"Ranges: {bins}\n"
-            f"Losses by range: {test_loss_by_range}"
+            f"Losses by range: {metrics.get('loss_by_range')}"
         )
 
         plot_true_vs_predicted_histogram(
-            labels,
-            predictions,
+            metrics.get("targets"),
+            metrics.get("predicted"),
             model_name,
             os.path.join(results_dir, f"{model_name}-histogram.pdf"),
         )
 
         plot_true_vs_predicted_scatter(
-            labels,
-            predictions,
+            metrics.get("targets"),
+            metrics.get("predicted"),
             model_name,
             os.path.join(results_dir, f"{model_name}-scatter.pdf"),
         )

@@ -167,7 +167,6 @@ def main():
             device,
             epoch,
             writer,
-            bins,
         )
         trained_epochs += 1
         stopper(val_loss)
@@ -181,18 +180,16 @@ def main():
     logging.info("Training finished.")
 
     # Test model
-    test_loss, test_mae, test_rmse, test_loss_by_range, _, _ = test(
-        model, test_dl, loss, device, bins
-    )
+    metrics = test(model, test_dl, loss, device, bins)
 
     report = (
         f"Finished training with {config.model} configuration for {epochs} epochs\n"
         f"Early stopping triggered at epoch {trained_epochs}\n"
-        f"Final test loss: {test_loss:>8f}\n"
-        f"Final MAE loss: {test_mae:>8f}\n"
-        f"Final RMSE loss: {test_rmse:>8f}\n"
+        f"Final test loss: {metrics.get('total'):>8f}\n"
+        f"Final MAE loss: {metrics.get('mae'):>8f}\n"
+        f"Final RMSE loss: {metrics.get('rmse'):>8f}\n"
         f"Ranges: {bins}\n"
-        f"Losses by range: {test_loss_by_range}"
+        f"Losses by range: {metrics.get('loss_by_range')}"
     )
 
     logging.info(report)
