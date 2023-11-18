@@ -1,5 +1,5 @@
 import os
-from typing import Optional
+from typing import Optional, Tuple
 
 from geopandas import GeoDataFrame, read_file, sjoin
 from matplotlib import pyplot as plt
@@ -195,6 +195,7 @@ def plot_true_vs_predicted_scatter(
     predicted_values: ndarray,
     model_name: str,
     path: Optional[str] = None,
+    bounds: Optional[Tuple[int, int]] = (0, 50),
 ) -> None:
     """
     Create a scatter plot for true vs predicted values with specific adjustments.
@@ -212,6 +213,11 @@ def plot_true_vs_predicted_scatter(
 
     plt.figure(figsize=(10, 10))
 
+    # Only plot values within the bounds
+    lower, upper = bounds
+    mask = (true_values >= lower) & (true_values < upper)
+    true_values, predicted_values = true_values[mask], predicted_values[mask]
+
     plt.scatter(true_values, predicted_values, marker="o", alpha=0.6)
 
     # 1:1 line for perfect predictions
@@ -222,7 +228,7 @@ def plot_true_vs_predicted_scatter(
     plt.xlabel("GEDI RH98 (m)", fontsize=14)
     plt.ylabel(f"{model_name} RH98 (m)", fontsize=14)
 
-    ticks = arange(0, max_val, 5)
+    ticks = arange(0, 55, 5)
     plt.xticks(ticks)
     plt.yticks(ticks)
 
