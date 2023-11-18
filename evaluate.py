@@ -30,8 +30,8 @@ def get_evaluation_args():
     parser.add_argument(
         "--batch_size",
         type=int,
-        default=16,
-        help="Batch size [default: 16]",
+        default=64,
+        help="Batch size [default: 64]",
     )
     parser.add_argument(
         "--filename",
