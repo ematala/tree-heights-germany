@@ -5,6 +5,7 @@ from argparse import ArgumentParser
 from dotenv import load_dotenv
 from pandas import DataFrame
 
+from models import get_all_models, make_model
 from utils.loss import loss
 from utils.misc import get_device, seed_everyting
 from utils.models import test
@@ -74,14 +75,11 @@ def main():
         bins,
     )
 
-    # Load all models
     models = {
-        # filename[: -len(".pt")]: load_model(os.path.join(weights_dir, filename), device)
-        # for filename in [f for f in os.listdir(weights_dir) if f.endswith(".pt")]
-        # todo: load models
+        name: make_model(name).load(os.path.join(weights_dir, f"{name}.pt")).to(device)
+        for name in get_all_models()
+        if os.path.exists(os.path.join(weights_dir, f"{name}.pt"))
     }
-
-    raise NotImplementedError
 
     # Initialize results DataFrame
     results = DataFrame(columns=["Test Loss", "MAE", "RMSE", "Test Loss By Range"])
