@@ -47,7 +47,7 @@ def get_training_args():
 
     parser.add_argument(
         "--teacher",
-        type=str,
+        choices=get_all_models(),
         default=None,
         help="Teacher model [default: None]",
     )
@@ -128,9 +128,11 @@ def main():
 
     if config.teacher:
         logging.info(f"Loading teacher model {config.teacher}")
-        raise NotImplementedError
-        # teacher = load_model(os.path.join(weights_dir, config.teacher), device)
-        # todo: load teacher model
+        teacher = (
+            make_model(config.teacher)
+            .load(os.path.join(weights_dir, f"{config.teacher}.pt"))
+            .to(device)
+        )
 
     # Create scheduler
     scheduler = CosineAnnealingLR(optimizer, epochs)

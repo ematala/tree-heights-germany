@@ -29,3 +29,5 @@ class BaseModel(torch.nn.Module):
             path (str): file path
         """
         self.load_state_dict(torch.load(path, map_location=torch.device("cpu")))
+
+        return self
