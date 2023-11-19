@@ -1,18 +1,12 @@
 import os
-import re
-from functools import partial
-from itertools import chain
-from multiprocessing import get_context
 from typing import Dict, Tuple
 
 from numpy import float32, ndarray, zeros
-from PIL.Image import fromarray
 from rasterio import open as ropen
 from torch import Tensor, from_numpy, no_grad
 from torch import device as Device
 from torch.nn import Module
 from torch.utils.data import DataLoader
-from tqdm import tqdm
 
 from .misc import get_normalized_image, get_window_bounds
 
@@ -40,20 +34,20 @@ def predict_patch(
 
 
 def predict_image(
-    model: Module, device: Device, img: str, patch_size: int
+    img: str, model: Module, device: Device, patch_size: int = 256
 ) -> Tuple[ndarray, ndarray]:
     with ropen(os.path.join(img)) as src:
         image = get_normalized_image(src)
 
     # Initialize an array to hold the predictions
     _, height, width = image.shape
-    outputs = zeros((1, height, width))
+    outputs = zeros((height, width), dtype=float32)
 
     # Calculate the number of patches
     n_patches = (height // patch_size) ** 2
 
     # Iterate through the patches
-    for patch in tqdm(range(n_patches)):
+    for patch in range(n_patches):
         # Get the window bounds for the patch
         bounds = get_window_bounds(patch, patch_size)
         row_start, row_end, col_start, col_end = bounds
@@ -68,13 +62,9 @@ def predict_image(
         _, prediction = predict_patch(model, patch, device)
 
         # Place the patch prediction into the prediction image
-        outputs[:, row_start:row_end, col_start:col_end] = prediction
+        outputs[row_start:row_end, col_start:col_end] = prediction
 
-    return image, outputs.squeeze()
-
-
-def save_prediction(prediction: ndarray, filename: str) -> None:
-    fromarray(prediction, mode="F").save(f"{filename}", "TIFF")
+    return image, outputs
 
 
 def predict_batch(
@@ -96,23 +86,3 @@ def predict_batch(
         predictions[model_name] = outputs.cpu()
 
     return inputs, predictions
-
-
-def predict_all_images(
-    model: Module,
-    img_dir: str,
-    patch_size: int,
-    model_path: str,
-    device: Device,
-    filename: str,
-):
-    regexp = r"L15\-\d{4}E\-\d{4}N\.tif"
-    images = [f for f in os.listdir(img_dir) if re.match(regexp, f)]
-
-    fn = partial(model)
-    desc = "Predicting images"
-
-    with get_context("spawn").Pool(os.cpu_count() // 2) as pool:
-        res = [r for r in tqdm(pool.imap_unordered(fn, images), desc, len(images))]
-
-    return list(chain.from_iterable(res))
