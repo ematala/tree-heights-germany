@@ -20,6 +20,9 @@ class Vit(BaseModel):
         readout_op="ignore",
         use_bn=True,
         enable_attention_hooks=False,
+        encoder_attn_drop_rate=0.1,
+        encoder_proj_drop_rate=0.1,
+        decoder_drop_rate=0.1,
         **kwargs,
     ):
         super(Vit, self).__init__()
@@ -30,9 +33,11 @@ class Vit(BaseModel):
             enable_attention_hooks=enable_attention_hooks,
             img_size=img_size,
             in_chans=in_chans,
+            attn_drop_rate=encoder_attn_drop_rate,
+            proj_drop_rate=encoder_proj_drop_rate,
             **kwargs,
         )
-        self.decoder = make_decoder(embed_dim, blocks)
+        self.decoder = make_decoder(embed_dim, blocks, decoder_drop_rate)
         self.refinenets = make_refinenets(embed_dim, blocks, use_bn)
         self.output_conv = make_output_conv(embed_dim)
 

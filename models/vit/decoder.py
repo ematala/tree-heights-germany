@@ -9,6 +9,7 @@ from .backbone import make_feature_dims
 def make_decoder(
     embed_dim: int,
     blocks: int = 4,
+    drop_rate=0.1,
     groups=1,
     expand=False,
 ):
@@ -18,6 +19,7 @@ def make_decoder(
         groups=groups,
         expand=expand,
         blocks=blocks,
+        drop_rate=drop_rate,
     )
 
 
@@ -29,6 +31,7 @@ class VitDecoder(nn.Module):
         groups=1,
         expand=False,
         blocks=4,
+        drop_rate=0.1,
     ) -> None:
         super(VitDecoder, self).__init__()
 
@@ -53,5 +56,7 @@ class VitDecoder(nn.Module):
             ]
         )
 
+        self.dropouts = nn.ModuleList([nn.Dropout2d(drop_rate) for _ in range(blocks)])
+
     def forward(self, skips: List[Tensor]) -> List[Tensor]:
-        return [self.layers[i](skips[i]) for i in range(len(skips))]
+        return [self.dropouts[i](self.layers[i](skip)) for i, skip in enumerate(skips)]
