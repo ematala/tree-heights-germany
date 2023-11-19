@@ -86,6 +86,13 @@ def get_device(dev: Optional[str] = None) -> Device:
     )
 
 
+def get_num_processes_to_spawn(
+    num_images: int,
+    max_processes_per_core: int = 1,
+) -> int:
+    return min(os.cpu_count() * max_processes_per_core, num_images)
+
+
 def send_telegram_message(message: str):
     token = os.getenv("TELEGRAM_TOKEN")
     chat_id = os.getenv("TELEGRAM_CHAT_ID")

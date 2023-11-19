@@ -22,6 +22,7 @@ from tqdm import tqdm
 from utils.misc import (
     get_label_bins,
     get_normalized_image,
+    get_num_processes_to_spawn,
     get_window_bounds,
     send_telegram_message,
 )
@@ -164,7 +165,9 @@ class Preprocessor:
 
         results = []
 
-        with get_context("spawn").Pool(os.cpu_count() // 2) as pool:
+        num_processes = get_num_processes_to_spawn(len(self.images))
+
+        with get_context("spawn").Pool(num_processes) as pool:
             for result in tqdm(
                 pool.imap_unordered(fn, self.images),
                 "Processing images",

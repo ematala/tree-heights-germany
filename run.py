@@ -3,12 +3,13 @@ import os
 import re
 from functools import partial
 
+from dotenv import load_dotenv
 from torch.multiprocessing import get_context
 from tqdm import tqdm
 
 from models import get_all_models, make_model
 from utils.io import save_prediction
-from utils.misc import get_device
+from utils.misc import get_device, get_num_processes_to_spawn, send_telegram_message
 from utils.predictions import predict_image
 
 
@@ -81,6 +82,7 @@ def predict_and_save_image(
 
 
 def main():
+    load_dotenv()
     args = get_args()
     assert all(
         os.path.exists(d) for d in [args.input_dir, args.output_dir, args.weights_dir]
@@ -90,9 +92,12 @@ def main():
     images = [f for f in os.listdir(args.input_dir) if re.match(regexp, f)]
 
     fn = partial(predict_and_save_image, **vars(args))
+    num_processes = get_num_processes_to_spawn(len(images))
 
-    with get_context("spawn").Pool(os.cpu_count() // 2) as pool:
+    with get_context("spawn").Pool(num_processes) as pool:
         list(tqdm(pool.imap_unordered(fn, images), total=len(images)))
+
+    send_telegram_message(f"Inference finished for {len(images)} images.")
 
     print("Done.")
 
