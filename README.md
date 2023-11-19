@@ -4,13 +4,13 @@ tbd
 
 ## Available Models
 
-| Model                                     | Architecture                 | Params   |
-| ----------------------------------------- | ---------------------------- | -------- |
-| [vit-tiny](models/vit/__init__.py)        | Vision Transformer + ConvNet | 6576777  |
-| [vit-small](models/vit/__init__.py)       | Vision Transformer + ConvNet | 14518713 |
-| [vit-base](models/vit/__init__.py)        | Vision Transformer + ConvNet | 25563369 |
-| [unet](models/unet/__init__.py)           | Unet                         | 10103933 |
-| [unet++](models/unetplusplus/__init__.py) | Unet++                       | 10479187 |
+| Model                                     | Architecture                 | Params     |
+| ----------------------------------------- | ---------------------------- | ---------- |
+| [vit-tiny](models/vit/__init__.py)        | Vision Transformer + ConvNet | 6.576.777  |
+| [vit-small](models/vit/__init__.py)       | Vision Transformer + ConvNet | 14.518.713 |
+| [vit-base](models/vit/__init__.py)        | Vision Transformer + ConvNet | 25.563.369 |
+| [unet](models/unet/__init__.py)           | U-Net                        | 10.103.933 |
+| [unet++](models/unetplusplus/__init__.py) | U-Net++                      | 10.479.187 |
 
 ## Training Data
 - PlanetScope satellite images

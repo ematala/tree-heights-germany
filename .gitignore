@@ -158,10 +158,8 @@ cython_debug/
 # VS Code
 .vscode
 
-# data, plots, results
+# data
 data
-plots
-results
 
 # potentially large files
 *.tif
