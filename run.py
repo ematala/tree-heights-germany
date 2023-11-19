@@ -92,10 +92,7 @@ def main():
     fn = partial(predict_and_save_image, **vars(args))
 
     with get_context("spawn").Pool(os.cpu_count() // 2) as pool:
-        results = list(tqdm(pool.imap_unordered(fn, images), total=len(images)))
-
-        all_successful = all(results)
-        print(f"All tasks completed successfully: {all_successful}")
+        list(tqdm(pool.imap_unordered(fn, images), total=len(images)))
 
     print("Done.")
 
