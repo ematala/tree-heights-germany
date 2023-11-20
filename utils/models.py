@@ -3,15 +3,14 @@ from math import sqrt
 from typing import Callable, List, Optional, Tuple
 
 import matplotlib.pyplot as plt
+import torch
 from numpy import ndarray
 from torch import (
     Tensor,
     cat,
     from_numpy,
-    isnan,
     no_grad,
     stack,
-    where,
     zeros,
 )
 from torch import device as Device
@@ -22,9 +21,9 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
-from .loss import filter
-from .loss import loss_by_range as range_loss
+from .loss import filter, loss_by_range
 from .plots import brighten_image
+from .transforms import denormalize, scale
 
 
 def train(
@@ -115,12 +114,9 @@ def validate(
     # Add images to writer
     # Since the images never change, only add them once
     if epoch == 0:
-        writer.add_images(
-            "Plots/images",
-            brighten_image(inputs[:, :3, :, :].cpu().numpy()),
-            epoch,
-            dataformats="NCHW",
-        )
+        images = torch.stack([scale(denormalize(batch)) for batch in inputs])
+        images = brighten_image(images[:, :3, :, :].cpu().numpy())
+        writer.add_images("Plots/images", images, epoch, dataformats="NCHW")
 
     # Add predictions to writer
     preds = stack([apply_colormap(output) for output in outputs])
@@ -177,9 +173,8 @@ def test(
             metrics["mae"] += mae(filtered_outputs, filtered_targets).item()
             metrics["rmse"] += sqrt(mse(filtered_outputs, filtered_targets).item())
 
-            batch_loss_by_range = range_loss(outputs, targets, range_bins)
-            metrics["loss_by_range"] += where(
-                isnan(batch_loss_by_range), 0, batch_loss_by_range
+            metrics["loss_by_range"] += loss_by_range(
+                outputs, targets, range_bins, criterion
             )
 
             predictions["targets"].append(filtered_targets.cpu())

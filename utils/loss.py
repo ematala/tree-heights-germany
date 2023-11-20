@@ -1,7 +1,8 @@
-from typing import List, Optional, Tuple
+from math import sqrt
+from typing import Callable, List, Optional, Tuple
 
-from torch import Tensor, nan, zeros
-from torch.nn import SmoothL1Loss
+from torch import Tensor, zeros
+from torch.nn import L1Loss, MSELoss, SmoothL1Loss
 
 
 def filter(
@@ -35,17 +36,27 @@ def loss_by_range(
     outputs: Tensor,
     targets: Tensor,
     bins: List[Tuple[int, int]],
-    placeholder: float = nan,
+    criterion: Callable[[Tensor, Tensor], Tensor],
+    placeholder: float = 0,
 ) -> Tensor:
-    losses = zeros(len(bins)).to(outputs.device)
+    metrics = {
+        "total": zeros(len(bins)).to(outputs.device),
+        "mae": zeros(len(bins)).to(outputs.device),
+        "rmse": zeros(len(bins)).to(outputs.device),
+    }
+
+    mae = L1Loss()
+    mse = MSELoss()
 
     for idx, range in enumerate(bins):
         filtered_outputs, filtered_targets = filter(outputs, targets, range)
 
-        losses[idx] = (
-            loss(filtered_outputs, filtered_targets)
-            if filtered_targets.numel() > 0
-            else placeholder
-        )
+        if filtered_targets.numel() > 0:
+            metrics["total"][idx] = criterion(filtered_outputs, filtered_targets)
+            metrics["mae"][idx] = mae(filtered_outputs, filtered_targets)
+            metrics["rmse"][idx] = sqrt(mse(filtered_outputs, filtered_targets))
+        else:
+            for key in metrics.keys():
+                metrics[key][idx] = placeholder
 
-    return losses
+    return metrics.get("total")
