@@ -11,7 +11,6 @@ from typing import List
 from geopandas import GeoDataFrame, points_from_xy
 from h5py import File as HDF5File
 from numpy import any as npany
-from numpy import float32
 from numpy import sum as npsum
 from pandas import DataFrame, read_feather
 from patchify import patchify
@@ -22,7 +21,6 @@ from tqdm import tqdm
 
 from utils.misc import (
     get_label_bins,
-    get_normalized_image,
     get_num_processes_to_spawn,
     send_telegram_message,
 )
@@ -120,16 +118,17 @@ class Preprocessor:
                     transform=src.transform,
                     fill=0,
                     all_touched=True,
-                    dtype=float32,
+                    dtype=gedi.rh98.dtype,
                 )
 
-                # Read image from src
-                img = get_normalized_image(src).transpose((1, 2, 0))
+                # Read image from src and swap order of bands
+                img = src.read([3, 2, 1, 4]).transpose((1, 2, 0))
 
                 # Create patches
                 patches = patchify(
                     img, (patch_size, patch_size, img.shape[-1]), patch_overlap
                 ).squeeze()
+                # Create patches for labels
                 labels = patchify(
                     mask, (patch_size, patch_size), patch_overlap
                 ).squeeze()
