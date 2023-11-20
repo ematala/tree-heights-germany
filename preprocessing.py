@@ -1,19 +1,20 @@
+import argparse
 import logging
 import os
 import re
-from argparse import ArgumentParser
+import uuid
 from functools import partial
 from itertools import chain
 from multiprocessing import get_context
 from typing import List
 
-from dotenv import load_dotenv
 from geopandas import GeoDataFrame, points_from_xy
 from h5py import File as HDF5File
 from numpy import any as npany
 from numpy import float32
 from numpy import sum as npsum
 from pandas import DataFrame, read_feather
+from patchify import patchify
 from rasterio import open as ropen
 from rasterio.features import rasterize
 from shapely.geometry import box
@@ -23,7 +24,6 @@ from utils.misc import (
     get_label_bins,
     get_normalized_image,
     get_num_processes_to_spawn,
-    get_window_bounds,
     send_telegram_message,
 )
 
@@ -35,7 +35,7 @@ class Preprocessor:
         patch_dir: str = "data/patches",
         gedi_dir: str = "data/gedi",
         patch_size: int = 256,
-        image_size: int = 4096,
+        patch_overlap: int = 128,
         bins: List[int] = list(range(0, 55, 5)),
     ):
         self.img_dir = img_dir
@@ -43,9 +43,8 @@ class Preprocessor:
         self.patches_file = f"{self.patch_dir}/info.fth"
         self.gedi_file = f"{gedi_dir}/gedi_complete.fth"
         self.patch_size = patch_size
-        self.image_size = image_size
+        self.patch_overlap = patch_overlap
         self.bins = bins
-        self.n_patches = (self.image_size // self.patch_size) ** 2
         self.images = []
         self.gedi = None
         self.patches = None
@@ -84,7 +83,6 @@ class Preprocessor:
             & (self.gedi.num_detectedmodes > 0)
             & (self.gedi.degrade_flag == 0)
             & (self.gedi.stale_return_flag == 0)
-            # & (self.gedi.landsat_treecover > 0)
             & (self.gedi.rh98 >= 0)
             & (self.gedi.rh98 <= 70)
         ]
@@ -102,8 +100,8 @@ class Preprocessor:
         img_dir: str,
         patch_dir: str,
         patch_size: int,
+        patch_overlap: int,
         bins: List[int],
-        n_patches: int,
     ):
         valid_patches = []
         with ropen(os.path.join(img_dir, f"{image}.tif")) as src:
@@ -125,31 +123,40 @@ class Preprocessor:
             )
 
             # Read image from src
-            img = get_normalized_image(src)
+            img = get_normalized_image(src).transpose((1, 2, 0))
+
+            # Create patches
+            patches = patchify(
+                img, (patch_size, patch_size, img.shape[-1]), patch_overlap
+            ).squeeze()
+            labels = patchify(mask, (patch_size, patch_size), patch_overlap).squeeze()
+
+            rows, cols = patches.shape[:2]
 
             subdir = os.path.join(patch_dir, image)
             os.makedirs(subdir, exist_ok=True)
 
-            for patch in range(n_patches):
-                bounds = get_window_bounds(patch, patch_size)
-                row_start, row_end, col_start, col_end = bounds
+            for row in range(rows):
+                for col in range(cols):
+                    data = patches[row, col].transpose((2, 0, 1))
+                    label = labels[row, col]
 
-                data = img[:, row_start:row_end, col_start:col_end]
-                labels = mask[row_start:row_end, col_start:col_end]
+                    patch = str(uuid.uuid4())
 
-                if npany(labels):
-                    with HDF5File(f"{subdir}/{patch}.h5", "w") as hf:
-                        hf.create_dataset("image", data=data)
-                        hf.create_dataset("labels", data=labels)
+                    if npany(label):
+                        with HDF5File(f"{subdir}/{patch}.h5", "w") as hf:
+                            hf.create_dataset("image", data=data)
+                            hf.create_dataset("label", data=label)
 
-                    valid_patches.append(
-                        {
-                            "image": image,
-                            "patch": patch,
-                            "labels": npsum(labels != 0),
-                            "bins": get_label_bins(labels, bins),
-                        }
-                    )
+                        valid_patches.append(
+                            {
+                                "image": image,
+                                "patch": patch,
+                                "labels": npsum(label != 0),
+                                "bins": get_label_bins(label, bins),
+                            }
+                        )
+
         return valid_patches
 
     def _process_images(self):
@@ -160,7 +167,7 @@ class Preprocessor:
             patch_dir=self.patch_dir,
             patch_size=self.patch_size,
             bins=self.bins,
-            n_patches=self.n_patches,
+            patch_overlap=self.patch_overlap,
         )
 
         results = []
@@ -213,7 +220,7 @@ def get_args():
     Returns:
         Namespace: Arguments
     """
-    parser = ArgumentParser(
+    parser = argparse.ArgumentParser(
         description="Preprocess images and GEDI data for training and evaluation."
     )
     parser.add_argument(
@@ -222,18 +229,41 @@ def get_args():
         default=256,
         help="Patch size for the images [default: 256]",
     )
+
+    parser.add_argument(
+        "--patch_overlap",
+        type=int,
+        default=128,
+        help="Overlap between patches [default: 128]",
+    )
+
+    parser.add_argument(
+        "--img_dir",
+        type=str,
+        default="data/images",
+        help="Directory containing the images [default: data/images]",
+    )
+
+    parser.add_argument(
+        "--patch_dir",
+        type=str,
+        default="data/patches",
+        help="Directory to store the patches [default: data/patches]",
+    )
+
+    parser.add_argument(
+        "--gedi_dir",
+        type=str,
+        default="data/gedi",
+        help="Directory containing the GEDI data [default: data/gedi]",
+    )
+
     return parser.parse_args()
 
 
 def main():
-    load_dotenv()
     args = get_args()
-    Preprocessor(
-        img_dir=os.getenv("IMG_DIR"),
-        patch_dir=os.getenv("PATCH_DIR"),
-        gedi_dir=os.getenv("GEDI_DIR"),
-        **vars(args),
-    ).run()
+    Preprocessor(**vars(args)).run()
     send_telegram_message("Finished preprocessing")
 
 

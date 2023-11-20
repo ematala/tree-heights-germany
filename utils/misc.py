@@ -2,6 +2,7 @@ import os
 from random import seed as pyseed
 from typing import List, Optional, Tuple
 
+from dotenv import load_dotenv
 from numpy import histogram as nphist
 from numpy import ndarray, stack
 from numpy.random import seed as npseed
@@ -94,6 +95,7 @@ def get_num_processes_to_spawn(
 
 
 def send_telegram_message(message: str):
+    load_dotenv()
     token = os.getenv("TELEGRAM_TOKEN")
     chat_id = os.getenv("TELEGRAM_CHAT_ID")
 
