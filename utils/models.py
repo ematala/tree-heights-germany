@@ -114,8 +114,8 @@ def validate(
     # Add images to writer
     # Since the images never change, only add them once
     if epoch == 0:
-        images = torch.stack([scale(denormalize(batch)) for batch in inputs])
-        images = brighten_image(images[:, :3, :, :].cpu().numpy())
+        images = torch.stack([scale(denormalize(batch)) for batch in inputs.cpu()])
+        images = brighten_image(images[:, :3, :, :].numpy())
         writer.add_images("Plots/images", images, epoch, dataformats="NCHW")
 
     # Add predictions to writer
@@ -194,7 +194,7 @@ def test(
 
 
 def apply_colormap(img: Tensor) -> Tensor:
-    min, max = img.min().item(), img.max().item()
-    img = (img.cpu() - min) / (max - min)
+    img_min, img_max = img.min().item(), img.max().item()
+    img = (img.cpu() - img_min) / (img_max - img_min)
     cmap = plt.cm.viridis(img.numpy())[..., :3]
     return from_numpy(cmap).float()
