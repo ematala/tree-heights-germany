@@ -1,10 +1,10 @@
 import os
 from typing import Tuple
 
+import torch
 from h5py import File as HDF5File
 from numpy import ndarray
 from pandas import DataFrame
-from torch import Tensor
 from torch.utils.data import Dataset
 
 from .transforms import (
@@ -39,7 +39,9 @@ class ForestDataset(Dataset):
         self.patch_dir = patch_dir
         self.patches = patches
 
-    def transform(self, img: ndarray, label: ndarray) -> Tuple[Tensor, Tensor]:
+    def transform(
+        self, img: ndarray, label: ndarray
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         img = add_ndvi(img)
         img, label = to_tensor(img), to_tensor(label)
         img = normalize(img)
@@ -55,7 +57,7 @@ class ForestDataset(Dataset):
         """
         return len(self.patches)
 
-    def __getitem__(self, idx: int) -> Tuple[Tensor, Tensor]:
+    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         This function loads an image, preprocesses it and returns it along
         with the corresponding label

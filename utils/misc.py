@@ -4,7 +4,7 @@ from typing import List, Optional, Tuple
 
 from dotenv import load_dotenv
 from numpy import histogram as nphist
-from numpy import ndarray, stack
+from numpy import ndarray
 from numpy.random import seed as npseed
 from requests import post
 from torch import device as Device
@@ -29,33 +29,6 @@ def get_window_bounds(
         max(0, col),
         min(image_size, col + patch_size),
     )
-
-
-def normalize(arr: ndarray) -> ndarray:
-    return (arr - arr.min()) / (arr.max() - arr.min())
-
-
-def get_normalized_image(src) -> ndarray:
-    # Swap order of bands
-    img = src.read([3, 2, 1, 4])
-
-    # Unpack image
-    R, G, B, NIR = img
-
-    # Prevent division by zero
-    epsilon = 1e-8
-
-    # Calculate NDVI
-    NDVI = (NIR - R) / (NIR + R + epsilon)
-
-    # Normalize NDVI into range [0, 1]
-    NDVI = (NDVI + 1) / 2
-
-    # Normalize image channels into range [0, 1]
-    R, G, B, NIR = normalize(img)
-
-    # Ensemble image
-    return stack([R, G, B, NIR, NDVI])
 
 
 def get_label_bins(

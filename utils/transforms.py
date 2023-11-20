@@ -3,16 +3,38 @@ import random
 import numpy as np
 import torch
 
+_mean = torch.tensor([550.9839, 600.3104, 335.5715, 3093.5127])
+_std = torch.tensor([417.7791, 287.0238, 217.3390, 891.1005])
+
 
 def to_tensor(array: np.ndarray) -> torch.Tensor:
-    return torch.from_numpy(array).float()
+    return torch.from_numpy(array.astype(np.float32)).float()
 
 
-def normalize(tensor: torch.Tensor, max_value=65535.0) -> torch.Tensor:
+def normalize(
+    tensor: torch.Tensor,
+    mean: torch.Tensor = _mean,
+    std: torch.Tensor = _std,
+) -> torch.Tensor:
     # Normalize only the first four channels (R, G, B, NIR)
-    tensor[:4] = tensor[:4] / max_value
+    tensor[:4] = (tensor[:4] - mean.view(-1, 1, 1)[:4]) / std.view(-1, 1, 1)[:4]
 
     return tensor
+
+
+def denormalize(
+    tensor: torch.Tensor,
+    mean: torch.Tensor = _mean,
+    std: torch.Tensor = _std,
+) -> torch.Tensor:
+    # Deormalize only the first four channels (R, G, B, NIR)
+    tensor[:4] = tensor[:4] * std.view(-1, 1, 1)[:4] + mean.view(-1, 1, 1)[:4]
+
+    return tensor
+
+
+def scale(tensor: torch.Tensor) -> torch.Tensor:
+    return (tensor - tensor.min()) / (tensor.max() - tensor.min())
 
 
 def random_vertical_flip(image: torch.Tensor, label: torch.Tensor, prob=0.5):
