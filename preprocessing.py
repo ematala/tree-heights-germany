@@ -103,61 +103,67 @@ class Preprocessor:
         patch_overlap: int,
         bins: List[int],
     ):
-        valid_patches = []
-        with ropen(os.path.join(img_dir, f"{image}.tif")) as src:
-            bounds = box(*src.bounds)
-            subset = gedi[gedi.geometry.intersects(bounds)]
+        try:
+            valid_patches = []
+            with ropen(os.path.join(img_dir, f"{image}.tif")) as src:
+                bounds = box(*src.bounds)
+                subset = gedi[gedi.geometry.intersects(bounds)]
 
-            if subset.empty:
-                return []
+                if subset.empty:
+                    return []
 
-            shapes = [(row.geometry, row.rh98) for row in subset.itertuples()]
+                shapes = [(row.geometry, row.rh98) for row in subset.itertuples()]
 
-            mask = rasterize(
-                shapes=shapes,
-                out_shape=src.shape,
-                transform=src.transform,
-                fill=0,
-                all_touched=True,
-                dtype=float32,
-            )
+                mask = rasterize(
+                    shapes=shapes,
+                    out_shape=src.shape,
+                    transform=src.transform,
+                    fill=0,
+                    all_touched=True,
+                    dtype=float32,
+                )
 
-            # Read image from src
-            img = get_normalized_image(src).transpose((1, 2, 0))
+                # Read image from src
+                img = get_normalized_image(src).transpose((1, 2, 0))
 
-            # Create patches
-            patches = patchify(
-                img, (patch_size, patch_size, img.shape[-1]), patch_overlap
-            ).squeeze()
-            labels = patchify(mask, (patch_size, patch_size), patch_overlap).squeeze()
+                # Create patches
+                patches = patchify(
+                    img, (patch_size, patch_size, img.shape[-1]), patch_overlap
+                ).squeeze()
+                labels = patchify(
+                    mask, (patch_size, patch_size), patch_overlap
+                ).squeeze()
 
-            rows, cols = patches.shape[:2]
+                rows, cols = patches.shape[:2]
 
-            subdir = os.path.join(patch_dir, image)
-            os.makedirs(subdir, exist_ok=True)
+                subdir = os.path.join(patch_dir, image)
+                os.makedirs(subdir, exist_ok=True)
 
-            for row in range(rows):
-                for col in range(cols):
-                    data = patches[row, col].transpose((2, 0, 1))
-                    label = labels[row, col]
+                for row in range(rows):
+                    for col in range(cols):
+                        data = patches[row, col].transpose((2, 0, 1))
+                        label = labels[row, col]
 
-                    patch = str(uuid.uuid4())
+                        patch = str(uuid.uuid4())
 
-                    if npany(label):
-                        with HDF5File(f"{subdir}/{patch}.h5", "w") as hf:
-                            hf.create_dataset("image", data=data)
-                            hf.create_dataset("label", data=label)
+                        if npany(label):
+                            with HDF5File(f"{subdir}/{patch}.h5", "w") as hf:
+                                hf.create_dataset("image", data=data)
+                                hf.create_dataset("label", data=label)
 
-                        valid_patches.append(
-                            {
-                                "image": image,
-                                "patch": patch,
-                                "labels": npsum(label != 0),
-                                "bins": get_label_bins(label, bins),
-                            }
-                        )
+                            valid_patches.append(
+                                {
+                                    "image": image,
+                                    "patch": patch,
+                                    "labels": npsum(label != 0),
+                                    "bins": get_label_bins(label, bins),
+                                }
+                            )
 
-        return valid_patches
+            return valid_patches
+        except Exception as e:
+            logging.info(f"Error processing image {image}: {e}")
+            return []
 
     def _process_images(self):
         fn = partial(
