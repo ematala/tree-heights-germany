@@ -24,10 +24,11 @@ def predict_and_save_image(
 ):
     device = get_device()
 
-    model = make_model(model).load(os.path.join(weights_dir, f"{model}.pt")).to(device)
-
+    weights_path = os.path.join(weights_dir, f"{model}.pt")
     input_path = os.path.join(input_dir, img)
     output_path = os.path.join(output_dir, img)
+
+    model = make_model(model).load(weights_path).to(device)
 
     _, pred = predict_image(input_path, model, device, patch_size)
     save_prediction(pred, input_path, output_path, threshold)
