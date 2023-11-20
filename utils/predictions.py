@@ -3,12 +3,13 @@ from typing import Dict, Tuple
 
 from numpy import float32, ndarray, zeros
 from rasterio import open as ropen
-from torch import Tensor, from_numpy, no_grad
+from torch import Tensor, no_grad
 from torch import device as Device
 from torch.nn import Module
 from torch.utils.data import DataLoader
 
-from .misc import get_normalized_image, get_window_bounds
+from .misc import get_window_bounds
+from .transforms import add_ndvi, normalize, to_tensor
 
 
 def predict_image(
@@ -17,7 +18,10 @@ def predict_image(
     model.eval()
 
     with ropen(os.path.join(img)) as src:
-        image = get_normalized_image(src)
+        image = src.read([3, 2, 1, 4])
+        model_input = add_ndvi(image)
+        model_input = to_tensor(model_input)
+        model_input = normalize(model_input)
 
     # Initialize an array to hold the predictions
     _, height, width = image.shape
@@ -34,9 +38,7 @@ def predict_image(
 
         # Extract the image patch
         patch = (
-            from_numpy(image[:, row_start:row_end, col_start:col_end].astype(float32))
-            .unsqueeze(0)
-            .to(device)
+            model_input[:, row_start:row_end, col_start:col_end].unsqueeze(0).to(device)
         )
         # Perform the prediction
         with no_grad():

@@ -8,7 +8,7 @@ from rasterio import open as ropen
 from rasterio.plot import show as rshow
 from torch import Tensor
 
-from .misc import get_normalized_image
+from .transforms import add_ndvi, denormalize, scale
 
 CONFIG = {
     "format": "pdf",
@@ -78,7 +78,9 @@ def plot_image_channels(
     path: Optional[str] = None,
 ) -> None:
     with ropen(os.path.join(image)) as src:
-        img = get_normalized_image(src)
+        img = src.read([3, 2, 1, 4])
+        img = add_ndvi(img)
+        img[:4] = scale(img[:4])
 
         red, green, blue, nir, ndvi = img
 
@@ -164,7 +166,9 @@ def plot_predictions(
         axes = expand_dims(axes, axis=0)
 
     for i in range(nrows):
-        image = images[i, :3, :, :].permute(1, 2, 0).numpy()
+        image = denormalize(images[i])
+        image = scale(image)
+        image = image[:3, :, :].permute(1, 2, 0).numpy()
 
         image = brighten_image(image)
 
