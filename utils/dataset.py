@@ -27,7 +27,7 @@ class ForestDataset(Dataset):
     def __init__(
         self,
         patches: DataFrame,
-        patch_dir: str = "data/patches/256",
+        patch_dir: str,
     ):
         """
         Args:
