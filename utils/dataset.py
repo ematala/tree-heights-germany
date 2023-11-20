@@ -2,10 +2,19 @@ import os
 from typing import Tuple
 
 from h5py import File as HDF5File
-from numpy import float32
+from numpy import ndarray
 from pandas import DataFrame
-from torch import Tensor, from_numpy
+from torch import Tensor
 from torch.utils.data import Dataset
+
+from .transforms import (
+    add_ndvi,
+    normalize,
+    random_horizontal_flip,
+    random_rotation,
+    random_vertical_flip,
+    to_tensor,
+)
 
 
 class ForestDataset(Dataset):
@@ -29,6 +38,16 @@ class ForestDataset(Dataset):
 
         self.patch_dir = patch_dir
         self.patches = patches
+
+    def transform(self, img: ndarray, label: ndarray) -> Tuple[Tensor, Tensor]:
+        img = add_ndvi(img)
+        img, label = to_tensor(img), to_tensor(label)
+        img = normalize(img)
+        img, label = random_vertical_flip(img, label, prob=0.5)
+        img, label = random_horizontal_flip(img, label, prob=0.5)
+        img, label = random_rotation(img, label, prob=0.5)
+
+        return img, label
 
     def __len__(self) -> int:
         """
@@ -55,8 +74,4 @@ class ForestDataset(Dataset):
             img = hf["image"][:]
             label = hf["label"][:]
 
-        # Return the image patch and label patch as PyTorch tensors
-        return (
-            from_numpy(img.astype(float32)),
-            from_numpy(label.astype(float32)),
-        )
+        return self.transform(img, label)
