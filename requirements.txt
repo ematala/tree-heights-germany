@@ -49,6 +49,7 @@ nvidia-nvtx-cu11==11.7.91
 oauthlib==3.2.2
 packaging==23.1
 pandas==2.0.3
+patchify==0.2.3
 Pillow==10.0.1
 pretrainedmodels==0.7.4
 protobuf==4.24.4
