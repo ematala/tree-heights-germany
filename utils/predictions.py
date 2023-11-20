@@ -11,31 +11,11 @@ from torch.utils.data import DataLoader
 from .misc import get_normalized_image, get_window_bounds
 
 
-def predict_patch(
-    model: Module, patch: Tuple[Tensor, Tensor], device: Device
-) -> Tuple[ndarray, ndarray]:
-    model.eval()
-
-    # Extract the image from the patch
-    image, _ = patch
-
-    # Add batch dimension and move to the device
-    image = image.unsqueeze(0).to(device)
-
-    # Perform the prediction
-    with no_grad():
-        outputs = model(image)
-
-    # Move the image and prediction to CPU and remove batch dimension
-    image = image.squeeze().cpu().numpy()
-    outputs = outputs.squeeze().cpu().numpy()
-
-    return image, outputs
-
-
 def predict_image(
     img: str, model: Module, device: Device, patch_size: int = 256
 ) -> Tuple[ndarray, ndarray]:
+    model.eval()
+
     with ropen(os.path.join(img)) as src:
         image = get_normalized_image(src)
 
@@ -52,17 +32,20 @@ def predict_image(
         bounds = get_window_bounds(patch, patch_size)
         row_start, row_end, col_start, col_end = bounds
 
-        # Extract the patch
+        # Extract the image patch
         patch = (
-            from_numpy(image[:, row_start:row_end, col_start:col_end].astype(float32)),
-            None,
+            from_numpy(image[:, row_start:row_end, col_start:col_end].astype(float32))
+            .unsqueeze(0)
+            .to(device)
         )
+        # Perform the prediction
+        with no_grad():
+            prediction = model(patch)
 
-        # Use the predict_patch function to get the prediction
-        _, prediction = predict_patch(model, patch, device)
-
-        # Place the patch prediction into the prediction image
-        outputs[row_start:row_end, col_start:col_end] = prediction
+        # Add the patch to the output array
+        outputs[row_start:row_end, col_start:col_end] = (
+            prediction.squeeze().cpu().numpy()
+        )
 
     return image, outputs
 
