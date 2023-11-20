@@ -18,51 +18,27 @@ from utils.plots import (
 from utils.predictions import predict_batch
 
 
-def get_evaluation_args():
-    """Get arguments from command line
-
-    Returns:
-        Namespace: Arguments
-    """
-    parser = ArgumentParser(
-        description="Evaluate a model suite on predicting tree canopy heights"
-    )
-    parser.add_argument(
-        "--batch_size",
-        type=int,
-        default=64,
-        help="Batch size [default: 64]",
-    )
-    parser.add_argument(
-        "--filename",
-        type=str,
-        default="evaluation.csv",
-        help="Filename for the evaluation results [default: evaluation.csv]",
-    )
-    return parser.parse_args()
-
-
 def main():
-    load_dotenv()
-    img_dir = os.getenv("IMG_DIR")
-    weights_dir = os.getenv("WEIGHTS_DIR")
-    patch_dir = os.getenv("PATCH_DIR")
-    results_dir = os.getenv("RESULTS_DIR")
-    gedi_dir = os.getenv("GEDI_DIR")
+    args = get_evaluation_args()
     image_size = 256
     random_state = 42
     num_workers = os.cpu_count() // 2
     bins = list(range(0, 55, 5))
     device = get_device()
-    config = get_evaluation_args()
+    config = vars(args)
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
 
     # Set random seed
     seed_everyting(random_state)
 
-    batch_size = config.batch_size
-    results_filename = config.filename
+    img_dir = config.get("img_dir")
+    patch_dir = config.get("patch_dir")
+    gedi_dir = config.get("gedi_dir")
+    weights_dir = config.get("weights_dir")
+    results_dir = config.get("results_dir")
+    batch_size = config.get("batch_size")
+    results_filename = config.get("filename")
 
     # Get data
     _, _, test_dl = get_data(
@@ -125,6 +101,62 @@ def main():
 
     # Save results
     results.to_csv(os.path.join(results_dir, results_filename), sep=";")
+
+
+def get_evaluation_args():
+    """Get arguments from command line
+
+    Returns:
+        Namespace: Arguments
+    """
+
+    load_dotenv()
+    parser = ArgumentParser(
+        description="Evaluate a model suite on predicting tree canopy heights"
+    )
+    parser.add_argument(
+        "--img_dir",
+        type=str,
+        default=os.getenv("IMG_DIR", "data/images"),
+        help="Path to images directory [default: data/images]",
+    )
+    parser.add_argument(
+        "--patch_dir",
+        type=str,
+        default=os.getenv("PATCH_DIR", "data/patches"),
+        help="Path to patches directory [default: data/patches]",
+    )
+    parser.add_argument(
+        "--gedi_dir",
+        type=str,
+        default=os.getenv("GEDI_DIR", "data/gedi"),
+        help="Path to GEDI directory [default: data/gedi]",
+    )
+    parser.add_argument(
+        "--weights_dir",
+        type=str,
+        default=os.getenv("WEIGHTS_DIR", "weights"),
+        help="Path to weights directory [default: weights]",
+    )
+    parser.add_argument(
+        "--results_dir",
+        type=str,
+        default=os.getenv("RESULTS_DIR", "results"),
+        help="Path to results directory [default: results]",
+    )
+    parser.add_argument(
+        "--batch_size",
+        type=int,
+        default=64,
+        help="Batch size [default: 64]",
+    )
+    parser.add_argument(
+        "--filename",
+        type=str,
+        default="evaluation.csv",
+        help="Filename for the evaluation results [default: evaluation.csv]",
+    )
+    return parser.parse_args()
 
 
 if __name__ == "__main__":

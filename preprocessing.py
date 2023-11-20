@@ -7,6 +7,7 @@ from functools import partial
 from itertools import chain
 from multiprocessing import get_context
 from typing import List
+from dotenv import load_dotenv
 
 from geopandas import GeoDataFrame, points_from_xy
 from h5py import File as HDF5File
@@ -219,12 +220,15 @@ class Preprocessor:
         return self
 
 
-def get_args():
+def get_preprocessing_args():
     """Get arguments from command line
 
     Returns:
         Namespace: Arguments
     """
+
+    load_dotenv()
+
     parser = argparse.ArgumentParser(
         description="Preprocess images and GEDI data for training and evaluation."
     )
@@ -245,21 +249,21 @@ def get_args():
     parser.add_argument(
         "--img_dir",
         type=str,
-        default="data/images",
+        default=os.getenv("IMG_DIR", "data/images"),
         help="Directory containing the images [default: data/images]",
     )
 
     parser.add_argument(
         "--patch_dir",
         type=str,
-        default="data/patches",
+        default=os.getenv("PATCH_DIR", "data/patches"),
         help="Directory to store the patches [default: data/patches]",
     )
 
     parser.add_argument(
         "--gedi_dir",
         type=str,
-        default="data/gedi",
+        default=os.getenv("GEDI_DIR", "data/gedi"),
         help="Directory containing the GEDI data [default: data/gedi]",
     )
 
@@ -267,7 +271,7 @@ def get_args():
 
 
 def main():
-    args = get_args()
+    args = get_preprocessing_args()
     Preprocessor(**vars(args)).run()
     send_telegram_message("Finished preprocessing")
 

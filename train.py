@@ -15,15 +15,177 @@ from utils.pipeline import get_data
 from utils.stopping import EarlyStopping
 
 
+def main():
+    args = get_training_args()
+    image_size = 256
+    random_state = 42
+    num_workers = os.cpu_count() // 2
+    bins = list(range(0, 55, 5))
+    device = get_device()
+    config = vars(args)
+
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
+
+    # Set random seed
+    seed_everyting(random_state)
+
+    epochs = config.get("epochs")
+    batch_size = config.get("batch_size")
+    alpha = config.get("alpha")
+    patience = config.get("patience")
+    img_dir = config.get("img_dir")
+    log_dir = config.get("log_dir")
+    weights_dir = config.get("weights_dir")
+    patch_dir = config.get("patch_dir")
+    gedi_dir = config.get("gedi_dir")
+    model_name = config.get("model")
+    teacher_name = config.get("teacher")
+
+    logging.info(
+        f"Starting training...\n"
+        f"Configuration: {model_name}\n"
+        f"Epochs: {epochs}\n"
+        f"Device: {device}"
+    )
+
+    # Get data
+    train_dl, val_dl, test_dl = get_data(
+        img_dir,
+        patch_dir,
+        gedi_dir,
+        image_size,
+        batch_size,
+        num_workers,
+        bins,
+    )
+
+    # Create model and move to device
+    model = make_model(model_name).to(device)
+
+    # constant lr for all models
+    lr = 1e-4
+
+    # Create optimizer
+    optimizer = AdamW(model.parameters(), lr)
+
+    # Create teacher model
+    teacher = None
+
+    if teacher_name:
+        logging.info(f"Loading teacher model {teacher_name}")
+        teacher = (
+            make_model(teacher_name)
+            .load(os.path.join(weights_dir, f"{teacher_name}.pt"))
+            .to(device)
+        )
+
+    # Create scheduler
+    scheduler = CosineAnnealingLR(optimizer, epochs)
+
+    # Create writer
+    writer = SummaryWriter(f"{log_dir}/{model_name}")
+
+    # Create early stopping
+    stopper = EarlyStopping(model, weights_dir, model_name, patience)
+
+    # Initialize trained epochs
+    trained_epochs = 0
+
+    # Training loop
+    for epoch in range(epochs):
+        train(
+            model,
+            train_dl,
+            loss,
+            device,
+            epoch,
+            optimizer,
+            scheduler,
+            writer,
+            teacher,
+            alpha,
+        )
+        val_loss = validate(
+            model,
+            val_dl,
+            loss,
+            device,
+            epoch,
+            writer,
+        )
+        trained_epochs += 1
+        stopper(val_loss)
+        if stopper.stop:
+            logging.info(f"Early stopping at epoch {trained_epochs}")
+            break
+
+    # Close writer
+    writer.close()
+
+    logging.info("Training finished.")
+
+    # Test model
+    metrics = test(model, test_dl, loss, device, bins)
+
+    report = (
+        f"Finished training with {model_name} configuration for {epochs} epochs\n"
+        f"Early stopping triggered at epoch {trained_epochs}\n"
+        f"Final test loss: {metrics.get('total'):>8f}\n"
+        f"Final MAE loss: {metrics.get('mae'):>8f}\n"
+        f"Final RMSE loss: {metrics.get('rmse'):>8f}\n"
+        f"Ranges: {bins}\n"
+        f"Losses by range: {metrics.get('loss_by_range')}"
+    )
+
+    logging.info(report)
+
+    if config.get("notify"):
+        send_telegram_message(report)
+
+
 def get_training_args():
     """Get arguments from command line
 
     Returns:
         Namespace: Arguments
     """
+    load_dotenv()
+
     parser = argparse.ArgumentParser(
         description="Train a selected model on predicting tree canopy heights"
     )
+
+    parser.add_argument(
+        "--img_dir",
+        type=str,
+        default=os.getenv("IMG_DIR", "data/images"),
+        help="Path to images directory [default: data/images]",
+    )
+    parser.add_argument(
+        "--patch_dir",
+        type=str,
+        default=os.getenv("PATCH_DIR", "data/patches"),
+        help="Path to patches directory [default: data/patches]",
+    )
+    parser.add_argument(
+        "--gedi_dir",
+        type=str,
+        default=os.getenv("GEDI_DIR", "data/gedi"),
+        help="Path to GEDI directory [default: data/gedi]",
+    )
+    parser.add_argument(
+        "--weights_dir",
+        type=str,
+        default=os.getenv("WEIGHTS_DIR", "weights"),
+        help="Path to weights directory [default: weights]",
+    )
+    parser.add_argument(
+        "--log_dir",
+        type=str,
+        default=os.getenv("LOG_DIR", "logs"),
+        help="Path to logs directory [default: logs]",
+    )
+
     parser.add_argument(
         "--model",
         choices=get_all_models(),
@@ -67,135 +229,6 @@ def get_training_args():
     )
 
     return parser.parse_args()
-
-
-def main():
-    load_dotenv()
-    img_dir = os.getenv("IMG_DIR")
-    log_dir = os.getenv("LOG_DIR")
-    weights_dir = os.getenv("WEIGHTS_DIR")
-    patch_dir = os.getenv("PATCH_DIR")
-    gedi_dir = os.getenv("GEDI_DIR")
-    image_size = 256
-    random_state = 42
-    num_workers = os.cpu_count() // 2
-    bins = list(range(0, 55, 5))
-    device = get_device()
-    config = get_training_args()
-
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
-
-    # Set random seed
-    seed_everyting(random_state)
-
-    epochs = config.epochs
-    batch_size = config.batch_size
-    alpha = config.alpha
-    patience = config.patience
-
-    logging.info(
-        f"Starting training...\n"
-        f"Configuration: {config.model}\n"
-        f"Epochs: {epochs}\n"
-        f"Device: {device}"
-    )
-
-    # Get data
-    train_dl, val_dl, test_dl = get_data(
-        img_dir,
-        patch_dir,
-        gedi_dir,
-        image_size,
-        batch_size,
-        num_workers,
-        bins,
-    )
-
-    # Create model and optimizer
-    model = make_model(config.model)
-
-    # constant lr for all models
-    lr = 1e-4
-
-    # Create optimizer
-    optimizer = AdamW(model.parameters(), lr)
-
-    # Move model to device
-    model.to(device)
-
-    # Create teacher model
-    teacher = None
-
-    if config.teacher:
-        logging.info(f"Loading teacher model {config.teacher}")
-        teacher = (
-            make_model(config.teacher)
-            .load(os.path.join(weights_dir, f"{config.teacher}.pt"))
-            .to(device)
-        )
-
-    # Create scheduler
-    scheduler = CosineAnnealingLR(optimizer, epochs)
-
-    # Create writer
-    writer = SummaryWriter(f"{log_dir}/{config.model}")
-
-    # Create early stopping
-    stopper = EarlyStopping(model, weights_dir, config.model, patience)
-
-    # Initialize trained epochs
-    trained_epochs = 0
-
-    # Training loop
-    for epoch in range(epochs):
-        train(
-            model,
-            train_dl,
-            loss,
-            device,
-            epoch,
-            optimizer,
-            scheduler,
-            writer,
-            teacher,
-            alpha,
-        )
-        val_loss = validate(
-            model,
-            val_dl,
-            loss,
-            device,
-            epoch,
-            writer,
-        )
-        trained_epochs += 1
-        stopper(val_loss)
-        if stopper.stop:
-            logging.info(f"Early stopping at epoch {trained_epochs}")
-            break
-
-    # Close writer
-    writer.close()
-
-    logging.info("Training finished.")
-
-    # Test model
-    metrics = test(model, test_dl, loss, device, bins)
-
-    report = (
-        f"Finished training with {config.model} configuration for {epochs} epochs\n"
-        f"Early stopping triggered at epoch {trained_epochs}\n"
-        f"Final test loss: {metrics.get('total'):>8f}\n"
-        f"Final MAE loss: {metrics.get('mae'):>8f}\n"
-        f"Final RMSE loss: {metrics.get('rmse'):>8f}\n"
-        f"Ranges: {bins}\n"
-        f"Losses by range: {metrics.get('loss_by_range')}"
-    )
-
-    logging.info(report)
-
-    if config.notify:
-        send_telegram_message(report)
 
 
 if __name__ == "__main__":

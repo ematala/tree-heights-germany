@@ -13,7 +13,50 @@ from utils.misc import get_device, get_num_processes_to_spawn, send_telegram_mes
 from utils.predictions import predict_image
 
 
-def get_args():
+def predict_and_save_image(
+    img: str,
+    model: str,
+    weights_dir: str,
+    input_dir: str,
+    output_dir: str,
+    threshold: float = 5,
+    patch_size: int = 256,
+):
+    device = get_device()
+
+    model = make_model(model).load(os.path.join(weights_dir, f"{model}.pt")).to(device)
+
+    input_path = os.path.join(input_dir, img)
+    output_path = os.path.join(output_dir, img)
+
+    _, pred = predict_image(input_path, model, device, patch_size)
+    save_prediction(pred, input_path, output_path, threshold)
+
+
+def main():
+    load_dotenv()
+    args = get_inference_args()
+    assert all(
+        os.path.exists(d) for d in [args.input_dir, args.output_dir, args.weights_dir]
+    )
+
+    regexp = r"L15\-\d{4}E\-\d{4}N\.tif"
+    images = [f for f in os.listdir(args.input_dir) if re.match(regexp, f)]
+
+    fn = partial(predict_and_save_image, **vars(args))
+    num_processes = get_num_processes_to_spawn(len(images))
+
+    with get_context("spawn").Pool(num_processes) as pool:
+        list(tqdm(pool.imap_unordered(fn, images), total=len(images)))
+
+    send_telegram_message(f"Inference finished for {len(images)} images.")
+
+    print("Done.")
+
+
+def get_inference_args():
+    load_dotenv()
+
     parser = argparse.ArgumentParser(description="Predict a single image")
 
     parser.add_argument(
@@ -33,7 +76,7 @@ def get_args():
     parser.add_argument(
         "--weights_dir",
         type=str,
-        default="weights",
+        default=os.getenv("WEIGHTS_DIR", "weights"),
         help="Path to the weights folder",
     )
 
@@ -59,47 +102,6 @@ def get_args():
     )
 
     return parser.parse_args()
-
-
-def predict_and_save_image(
-    img: str,
-    model: str,
-    weights_dir: str,
-    input_dir: str,
-    output_dir: str,
-    threshold: float = 5,
-    patch_size: int = 256,
-):
-    device = get_device()
-
-    model = make_model(model).load(os.path.join(weights_dir, f"{model}.pt")).to(device)
-
-    input_path = os.path.join(input_dir, img)
-    output_path = os.path.join(output_dir, img)
-
-    _, pred = predict_image(input_path, model, device, patch_size)
-    save_prediction(pred, input_path, output_path, threshold)
-
-
-def main():
-    load_dotenv()
-    args = get_args()
-    assert all(
-        os.path.exists(d) for d in [args.input_dir, args.output_dir, args.weights_dir]
-    )
-
-    regexp = r"L15\-\d{4}E\-\d{4}N\.tif"
-    images = [f for f in os.listdir(args.input_dir) if re.match(regexp, f)]
-
-    fn = partial(predict_and_save_image, **vars(args))
-    num_processes = get_num_processes_to_spawn(len(images))
-
-    with get_context("spawn").Pool(num_processes) as pool:
-        list(tqdm(pool.imap_unordered(fn, images), total=len(images)))
-
-    send_telegram_message(f"Inference finished for {len(images)} images.")
-
-    print("Done.")
 
 
 if __name__ == "__main__":
