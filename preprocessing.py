@@ -38,7 +38,7 @@ class Preprocessor:
         patch_size: int = 256,
         patch_overlap: int = 128,
         bins: List[int] = list(range(0, 55, 5)),
-        min_labels_per_patch: int = 5,
+        min_labels_per_patch: int = 15,
         **kwargs,
     ):
         self.img_dir = img_dir
@@ -152,7 +152,7 @@ class Preprocessor:
 
                         patch = str(uuid.uuid4())
 
-                        if np.count_nonzero(label) >= min_labels_per_patch:
+                        if np.count_nonzero(label) > min_labels_per_patch:
                             with HDF5File(f"{subdir}/{patch}.h5", "w") as hf:
                                 hf.create_dataset("image", data=data)
                                 hf.create_dataset("label", data=label)
