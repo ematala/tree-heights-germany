@@ -7,19 +7,21 @@ from functools import partial
 from itertools import chain
 from multiprocessing import get_context
 from typing import List
-from dotenv import load_dotenv
 
+import numpy as np
+import torch
+from dotenv import load_dotenv
 from geopandas import GeoDataFrame, points_from_xy
 from h5py import File as HDF5File
-from numpy import any as npany
-from numpy import sum as npsum
 from pandas import DataFrame, read_feather
 from patchify import patchify
 from rasterio import open as ropen
 from rasterio.features import rasterize
 from shapely.geometry import box
+from torch.utils.data import DataLoader
 from tqdm import tqdm
 
+from utils.dataset import ForestDataset
 from utils.misc import (
     get_label_bins,
     get_num_processes_to_spawn,
@@ -36,6 +38,8 @@ class Preprocessor:
         patch_size: int = 256,
         patch_overlap: int = 128,
         bins: List[int] = list(range(0, 55, 5)),
+        min_labels_per_patch: int = 5,
+        **kwargs,
     ):
         self.img_dir = img_dir
         self.patch_dir = f"{patch_dir}/{patch_size}"
@@ -44,6 +48,7 @@ class Preprocessor:
         self.patch_size = patch_size
         self.patch_overlap = patch_overlap
         self.bins = bins
+        self.min_labels_per_patch = min_labels_per_patch
         self.images = []
         self.gedi = None
         self.patches = None
@@ -101,6 +106,7 @@ class Preprocessor:
         patch_size: int,
         patch_overlap: int,
         bins: List[int],
+        min_labels_per_patch: int,
     ):
         try:
             valid_patches = []
@@ -146,7 +152,7 @@ class Preprocessor:
 
                         patch = str(uuid.uuid4())
 
-                        if npany(label):
+                        if np.count_nonzero(label) >= min_labels_per_patch:
                             with HDF5File(f"{subdir}/{patch}.h5", "w") as hf:
                                 hf.create_dataset("image", data=data)
                                 hf.create_dataset("label", data=label)
@@ -155,7 +161,7 @@ class Preprocessor:
                                 {
                                     "image": image,
                                     "patch": patch,
-                                    "labels": npsum(label != 0),
+                                    "labels": np.sum(label != 0),
                                     "bins": get_label_bins(label, bins),
                                 }
                             )
@@ -174,6 +180,7 @@ class Preprocessor:
             patch_size=self.patch_size,
             bins=self.bins,
             patch_overlap=self.patch_overlap,
+            min_labels_per_patch=self.min_labels_per_patch,
         )
 
         results = []
@@ -267,13 +274,65 @@ def get_preprocessing_args():
         help="Directory containing the GEDI data [default: data/gedi]",
     )
 
+    parser.add_argument(
+        "--batch_size",
+        type=int,
+        default=128,
+        help="Batch size for calculating dataset stats [default: 128]",
+    )
+
     return parser.parse_args()
+
+
+def get_dataset_stats(
+    patches: DataFrame,
+    patch_dir: str,
+    patch_size: int,
+    batch_size: int,
+    num_workers: int = 4,
+    **kwargs,
+):
+    dataset = ForestDataset(
+        patches=patches,
+        patch_dir=f"{patch_dir}/{patch_size}",
+        apply_transforms=False,
+    )
+    loader = DataLoader(
+        dataset=dataset,
+        batch_size=batch_size,
+        num_workers=num_workers,
+    )
+
+    channel_sum, channel_squared_sum, num_batches = 0, 0, 0
+
+    with torch.no_grad():
+        for img, _ in tqdm(loader, "Calculating dataset stats"):
+            channel_sum += torch.mean(img, dim=[0, 2, 3])
+            channel_squared_sum += torch.mean(img**2, dim=[0, 2, 3])
+            num_batches += 1
+
+    channel_mean = channel_sum / num_batches
+    chanel_std = (channel_squared_sum / num_batches - channel_mean**2) ** 0.5
+
+    stats = (
+        f"patches: {len(patches)}\n"
+        f"labels: {patches.labels.sum()}\n"
+        f"channel mean: {channel_mean}\n"
+        f"channel std: {chanel_std}\n"
+    )
+
+    logging.info(stats)
+
+    return stats
 
 
 def main():
     args = get_preprocessing_args()
-    Preprocessor(**vars(args)).run()
-    send_telegram_message("Finished preprocessing")
+    config = vars(args)
+    preprocessor = Preprocessor(**config)
+    preprocessor.run()
+    stats = get_dataset_stats(preprocessor.patches, **config)
+    send_telegram_message(stats)
 
 
 if __name__ == "__main__":
