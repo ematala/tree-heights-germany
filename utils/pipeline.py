@@ -25,8 +25,8 @@ def get_normalized_sampling_weights(
 
 def get_splits(
     patches: DataFrame,
-    val_size: float = 0.1,
-    test_size: float = 0.1,
+    val_size: float = 0.15,
+    test_size: float = 0.15,
     random_state: int = 42,
 ) -> Tuple[DataFrame, DataFrame, DataFrame]:
     train_df, rest = train_test_split(
