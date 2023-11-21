@@ -13,7 +13,7 @@ class EarlyStopping:
         model: BaseModel,
         weights_dir: str,
         model_name: str,
-        patience: int = 10,
+        patience: int = 5,
         delta: float = 0.0,
     ):
         """
