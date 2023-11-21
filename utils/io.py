@@ -29,34 +29,24 @@ def save_prediction(
 
 def read_window(fp: str, meta, bounds):
     with rasterio.open(fp) as src:
-        if src.crs != meta.get("crs"):
-            src_bounds = transform_bounds(meta.get("crs"), src.crs, *bounds)
-        else:
-            src_bounds = bounds
+        if src.crs == meta.get("crs"):
+            return src.read(1, window=from_bounds(*bounds, src.transform))
 
-        src_window = from_bounds(*src_bounds, src.transform)
+        src_bounds = transform_bounds(meta.get("crs"), src.crs, *bounds)
+        source = src.read(1, window=from_bounds(*src_bounds, src.transform))
 
-        if src_window.width <= 0 or src_window.height <= 0:
-            raise ValueError(
-                "Transformed window does not intersect with the source data."
-            )
-
-        source = src.read(1, window=src_window)
+        return source
 
         if source.size == 0:
             raise ValueError("Source data is empty after reading the window.")
-
-        if src.crs == meta.get("crs"):
-            return source
 
         _, width, height = calculate_default_transform(
             src.crs, meta.get("crs"), src.width, src.height, *src_bounds
         )
 
-        if width <= 0 or height <= 0:
-            raise ValueError("Invalid dimensions for reprojected data.")
-
-        destination = np.empty((1, height, width), dtype=meta.get("dtype"))
+        destination = np.empty(
+            (1, meta.get("height"), meta.get("width")), dtype=meta.get("dtype")
+        )
 
         destination, *_ = reproject(
             source=source,
