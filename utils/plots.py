@@ -324,7 +324,7 @@ def compare_predictions(img: str, models: Dict[str, str] = {}):
         show(image, ax=axs[0], title=img)
 
         for i, (name, fp) in enumerate(models.items()):
-            pred = read_window(fp, src.bounds)
+            pred = read_window(fp, src.meta, src.bounds)
             show(pred, ax=axs[i + 1], title=f"Predictions from {name}")
 
         for ax in axs:
