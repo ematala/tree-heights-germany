@@ -1,13 +1,14 @@
 import os
-from typing import Optional, Tuple
+from typing import Dict, Optional, Tuple
 
+import rasterio
 from geopandas import GeoDataFrame, read_file, sjoin
 from matplotlib import pyplot as plt
 from numpy import arange, expand_dims, minimum, ndarray
-from rasterio import open as ropen
-from rasterio.plot import show as rshow
+from rasterio.plot import show
 from torch import Tensor
 
+from .io import read_window
 from .transforms import add_ndvi, denormalize, scale
 
 CONFIG = {
@@ -77,7 +78,7 @@ def plot_image_channels(
     image: str,
     path: Optional[str] = None,
 ) -> None:
-    with ropen(os.path.join(image)) as src:
+    with rasterio.open(os.path.join(image)) as src:
         img = src.read([3, 2, 1, 4])
         img = add_ndvi(img)
         img[:4] = scale(img[:4])
@@ -88,12 +89,12 @@ def plot_image_channels(
 
         _, (axrgb, axr, axg, axb, axnir, axndvi) = plt.subplots(1, 6, figsize=(31, 7))
 
-        rshow(rgb, ax=axrgb, title="RGB", vmin=0, vmax=1)
-        rshow(red, ax=axr, cmap="Reds", title="Red", vmin=0, vmax=1)
-        rshow(green, ax=axg, cmap="Greens", title="Green", vmin=0, vmax=1)
-        rshow(blue, ax=axb, cmap="Blues", title="Blue", vmin=0, vmax=1)
-        rshow(nir, ax=axnir, cmap="viridis", title="NIR", vmin=0, vmax=1)
-        rshow(ndvi, ax=axndvi, cmap="RdYlGn", title="NDVI", vmin=0, vmax=1)
+        show(rgb, ax=axrgb, title="RGB", vmin=0, vmax=1)
+        show(red, ax=axr, cmap="Reds", title="Red", vmin=0, vmax=1)
+        show(green, ax=axg, cmap="Greens", title="Green", vmin=0, vmax=1)
+        show(blue, ax=axb, cmap="Blues", title="Blue", vmin=0, vmax=1)
+        show(nir, ax=axnir, cmap="viridis", title="NIR", vmin=0, vmax=1)
+        show(ndvi, ax=axndvi, cmap="RdYlGn", title="NDVI", vmin=0, vmax=1)
 
         for ax in [axr, axg, axb, axnir, axndvi, axrgb]:
             ax.axis("off")
@@ -305,3 +306,28 @@ def plot_true_vs_predicted_histogram(
     plt.tight_layout()
 
     save_or_show_plot(path)
+
+
+def compare_predictions(img: str, models: Dict[str, str] = {}):
+    with rasterio.open(img) as src:
+        image = src.read([3, 2, 1])
+        image = scale(image)
+        image = brighten_image(image)
+
+        num_plots = 1 + len(models)
+
+        _, axs = plt.subplots(1, num_plots, figsize=(5 * num_plots, 5))
+
+        if num_plots == 1:
+            axs = [axs]
+
+        show(image, ax=axs[0], title=img)
+
+        for i, (name, fp) in enumerate(models.items()):
+            pred = read_window(fp, src.bounds)
+            show(pred, ax=axs[i + 1], title=f"Predictions from {name}")
+
+        for ax in axs:
+            ax.axis("off")
+
+        plt.show()

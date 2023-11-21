@@ -1,5 +1,5 @@
+import rasterio
 from numpy import ndarray, uint8
-from rasterio import open as ropen
 
 
 def save_prediction(
@@ -8,7 +8,7 @@ def save_prediction(
     output_file: str,
     threshold: float = 5,
 ):
-    with ropen(input_file) as src:
+    with rasterio.open(input_file) as src:
         meta = src.meta.copy()
 
     meta.update({"count": 1, "dtype": "uint8", "nodata": 0, "compress": "LZW"})
@@ -17,5 +17,11 @@ def save_prediction(
 
     pred = (pred / pred.max() * 255).astype(uint8)
 
-    with ropen(output_file, "w", **meta) as dst:
+    with rasterio.open(output_file, "w", **meta) as dst:
         dst.write(pred, 1)
+
+
+def read_window(fp: str, bounds):
+    with rasterio.open(fp) as src:
+        window = rasterio.windows.from_bounds(*bounds, src.transform)
+        return src.read(1, window=window)
