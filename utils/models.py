@@ -114,8 +114,9 @@ def validate(
     # Add images to writer
     # Since the images never change, only add them once
     if epoch == 0:
-        images = torch.stack([scale(denormalize(batch)) for batch in inputs.cpu()])
-        images = brighten_image(images[:, :3, :, :].numpy())
+        images = torch.stack([scale(denormalize(batch)[:3]) for batch in inputs.cpu()])
+        images = brighten_image(images.numpy())
+
         writer.add_images("Plots/images", images, epoch, dataformats="NCHW")
 
     # Add predictions to writer
