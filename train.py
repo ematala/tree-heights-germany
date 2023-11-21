@@ -197,14 +197,13 @@ def get_training_args():
     )
 
     parser.add_argument(
-        "--batch_size", type=int, default=32, help="Batch size [default: 32]"
+        "--batch_size", type=int, default=64, help="Batch size [default: 64]"
     )
 
     parser.add_argument(
         "--notify",
-        type=bool,
-        default=True,
-        help="Notify after training [default: True]",
+        action="store_true",
+        help="Send telegram notification when training is finished",
     )
 
     parser.add_argument(
