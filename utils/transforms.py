@@ -3,8 +3,8 @@ import random
 import numpy as np
 import torch
 
-_mean = torch.tensor([550.9839, 600.3104, 335.5715, 3093.5127])
-_std = torch.tensor([417.7791, 287.0238, 217.3390, 891.1005])
+_mean = torch.tensor([557.7288, 614.5323, 347.2891, 3244.7385])
+_std = torch.tensor([421.4146, 286.8392, 225.8980, 908.4954])
 
 
 def to_tensor(array: np.ndarray) -> torch.Tensor:
