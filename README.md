@@ -15,8 +15,8 @@ tbd
 ## Training Data
 - 2693 multispectral PlanetScope satellite images (4096x4096x4, ~650 GB)
 - 4 channels per image (R, G, B, NIR)
-- 946.712 patches (256x256) after preprocessing
-- 21.436.432 GEDI labels after preprocessing
+- 505.724 patches (256x256) after preprocessing
+- 16.933.743 GEDI labels after preprocessing
 
 ## Install
 To install the required packages to a virtual environment and activate it, run:
