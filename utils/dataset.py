@@ -20,14 +20,16 @@ from .transforms import (
 class ForestDataset(Dataset):
 
     """
-    A Pytorch Dataset to load and preprocess satellite images and corresponding
-    labels for a tree height regression task.
+    A Pytorch Dataset to load and transform multispectral satellite images and
+    labels for predicting tree canopy height.
     """
 
     def __init__(
         self,
         patches: DataFrame,
         patch_dir: str,
+        apply_transforms: bool = True,
+        **kwargs,
     ):
         """
         Args:
@@ -38,13 +40,14 @@ class ForestDataset(Dataset):
 
         self.patch_dir = patch_dir
         self.patches = patches
+        self.apply_transforms = apply_transforms
 
     def transform(
         self, img: ndarray, label: ndarray
     ) -> Tuple[torch.Tensor, torch.Tensor]:
-        img = add_ndvi(img)
+        img, label = add_ndvi(img), label
         img, label = to_tensor(img), to_tensor(label)
-        img = normalize(img)
+        img, label = normalize(img), label
         img, label = random_vertical_flip(img, label, prob=0.5)
         img, label = random_horizontal_flip(img, label, prob=0.5)
         img, label = random_rotation(img, label, prob=0.5)
@@ -76,4 +79,7 @@ class ForestDataset(Dataset):
             img = hf["image"][:]
             label = hf["label"][:]
 
-        return self.transform(img, label)
+        if self.apply_transforms:
+            return self.transform(img, label)
+
+        return to_tensor(img), to_tensor(label)
