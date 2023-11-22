@@ -64,7 +64,7 @@ def plot_image_and_prediction(
     ax1.axis("off")
 
     # Plot the prediction
-    im = ax2.imshow(prediction.squeeze(), cmap="viridis")
+    im = ax2.imshow(prediction.squeeze(), cmap="inferno")
     ax2.set_title("Predicted Height Map")
     ax2.axis("off")
 
@@ -95,7 +95,7 @@ def plot_image_channels(
         show(red, ax=axr, cmap="Reds", title="Red", vmin=0, vmax=1)
         show(green, ax=axg, cmap="Greens", title="Green", vmin=0, vmax=1)
         show(blue, ax=axb, cmap="Blues", title="Blue", vmin=0, vmax=1)
-        show(nir, ax=axnir, cmap="viridis", title="NIR", vmin=0, vmax=1)
+        show(nir, ax=axnir, cmap="inferno", title="NIR", vmin=0, vmax=1)
         show(ndvi, ax=axndvi, cmap="RdYlGn", title="NDVI", vmin=0, vmax=1)
 
         for ax in [axr, axg, axb, axnir, axndvi, axrgb]:
@@ -116,7 +116,7 @@ def plot_labels_in_germany(
     fig, ax = plt.subplots(figsize=(10, 10))
 
     gedi_germany.plot(
-        cmap="viridis",
+        cmap="inferno",
         column="rh98",
         marker="x",
         markersize=0.1,
@@ -183,7 +183,7 @@ def plot_predictions(
         col = 1
         for model_name, preds in predictions.items():
             pred = preds[i].squeeze().numpy()
-            im = axes[i, col].imshow(pred, cmap="viridis")
+            im = axes[i, col].imshow(pred, cmap="inferno")
             axes[i, col].axis("off")
             if i == 0:
                 axes[i, col].set_title(model_name)
@@ -310,7 +310,9 @@ def plot_true_vs_predicted_histogram(
     save_or_show_plot(path)
 
 
-def compare_predictions(img: str, models: Dict[str, str] = {}):
+def compare_predictions(
+    img: str, models: Dict[str, str] = {}, path: Optional[str] = None
+):
     with rasterio.open(img) as src:
         image = src.read([3, 2, 1])
         image = scale(image)
@@ -327,15 +329,15 @@ def compare_predictions(img: str, models: Dict[str, str] = {}):
 
         for i, (name, fp) in enumerate(models.items()):
             pred = read_window(fp, src.meta, src.bounds)
-            show(pred, ax=axs[i + 1], title=f"Predictions from {name}")
+            show(pred, ax=axs[i + 1], title=f"Predictions from {name}", cmap="inferno")
 
         for ax in axs:
             ax.axis("off")
 
-        plt.show()
+    save_or_show_plot(path)
 
 
-def visualize_attention(input, model, prediction):
+def visualize_attention(input, model, prediction, path: Optional[str] = None):
     input = (input + 1.0) / 2.0
 
     attn1 = model.encoder.attention["1"]
@@ -395,4 +397,5 @@ def visualize_attention(input, model, prediction):
     plt.subplot(3, 4, 12)
     plt.imshow(get_mean_attention_map(attn4, -1, input.shape)), plt.axis("off")
     plt.tight_layout()
-    plt.show()
+
+    save_or_show_plot(path)

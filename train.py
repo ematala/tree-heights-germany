@@ -203,6 +203,7 @@ def get_training_args():
     parser.add_argument(
         "--notify",
         action="store_true",
+        default=True,
         help="Send telegram notification when training is finished",
     )
 

@@ -46,7 +46,7 @@ cd output
 
 ls *.tif > merge_list.txt
 
-gdal_merge.py -o output.tif --optfile merge_list.txt -co COMPRESS=LZW
+gdal_merge.py -o output.tif --optfile merge_list.txt -co COMPRESS=LZW -co BIGTIFF=YES
 ```
 
 ## References
