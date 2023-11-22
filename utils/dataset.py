@@ -29,6 +29,7 @@ class ForestDataset(Dataset):
         patches: DataFrame,
         patch_dir: str,
         apply_transforms: bool = True,
+        apply_augmentations: bool = False,
         **kwargs,
     ):
         """
@@ -41,6 +42,7 @@ class ForestDataset(Dataset):
         self.patch_dir = patch_dir
         self.patches = patches
         self.apply_transforms = apply_transforms
+        self.apply_augmentations = apply_augmentations
 
     def transform(
         self, img: ndarray, label: ndarray
@@ -48,6 +50,10 @@ class ForestDataset(Dataset):
         img, label = add_ndvi(img), label
         img, label = to_tensor(img), to_tensor(label)
         img, label = normalize(img), label
+
+        return img, label
+
+    def augment(self, img: ndarray, label: ndarray):
         img, label = random_vertical_flip(img, label, prob=0.5)
         img, label = random_horizontal_flip(img, label, prob=0.5)
         img, label = random_rotation(img, label, prob=0.5)
@@ -79,7 +85,13 @@ class ForestDataset(Dataset):
             img = hf["image"][:]
             label = hf["label"][:]
 
+        if self.apply_transforms and self.apply_augmentations:
+            return self.augment(*self.transform(img, label))
+
         if self.apply_transforms:
             return self.transform(img, label)
+
+        if self.apply_augmentations:
+            return self.augment(img, label)
 
         return to_tensor(img), to_tensor(label)

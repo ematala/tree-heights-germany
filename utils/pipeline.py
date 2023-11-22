@@ -47,7 +47,7 @@ def get_datasets(
     patch_dir: str,
 ) -> Tuple[Dataset, Dataset, Dataset]:
     return (
-        ForestDataset(train_df, patch_dir),
+        ForestDataset(train_df, patch_dir, apply_augmentations=True),
         ForestDataset(val_df, patch_dir),
         ForestDataset(test_df, patch_dir),
     )
@@ -89,7 +89,7 @@ def get_data(
     labels = preprocessor.gedi.rh98
 
     # Get patches
-    patches = preprocessor.patches
+    patches = preprocessor.patches.sample(n=1000)
 
     # Get label distribution
     dist, _ = histogram(labels, bins)
