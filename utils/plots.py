@@ -8,6 +8,8 @@ from numpy import arange, expand_dims, minimum, ndarray
 from rasterio.plot import show
 from torch import Tensor
 
+from models.vit.hooks import get_mean_attention_map
+
 from .io import read_window
 from .transforms import add_ndvi, denormalize, scale
 
@@ -331,3 +333,66 @@ def compare_predictions(img: str, models: Dict[str, str] = {}):
             ax.axis("off")
 
         plt.show()
+
+
+def visualize_attention(input, model, prediction):
+    input = (input + 1.0) / 2.0
+
+    attn1 = model.encoder.attention["1"]
+    attn2 = model.encoder.attention["2"]
+    attn3 = model.encoder.attention["3"]
+    attn4 = model.encoder.attention["4"]
+
+    plt.subplot(3, 4, 1), plt.imshow(input.squeeze().permute(1, 2, 0)), plt.title(
+        "Input", fontsize=8
+    ), plt.axis("off")
+    plt.subplot(3, 4, 2), plt.imshow(prediction), plt.set_cmap("inferno"), plt.title(
+        "Prediction", fontsize=8
+    ), plt.axis("off")
+
+    h = [2, 5, 8, 11]
+
+    # upper left
+    plt.subplot(345)
+    plt.imshow(get_mean_attention_map(attn1, 1, input.shape))
+    plt.ylabel("Upper left corner", fontsize=8)
+    plt.title(f"Layer {h[0] + 1}", fontsize=8)
+    gc = plt.gca()
+    gc.axes.xaxis.set_ticklabels([])
+    gc.axes.yaxis.set_ticklabels([])
+    gc.axes.xaxis.set_ticks([])
+    gc.axes.yaxis.set_ticks([])
+
+    plt.subplot(346)
+    plt.imshow(get_mean_attention_map(attn2, 1, input.shape))
+    plt.title(f"Layer {h[1] + 1}", fontsize=8)
+    plt.axis("off")
+
+    plt.subplot(347)
+    plt.imshow(get_mean_attention_map(attn3, 1, input.shape))
+    plt.title(f"Layer {h[2] + 1}", fontsize=8)
+    plt.axis("off")
+
+    plt.subplot(348)
+    plt.imshow(get_mean_attention_map(attn4, 1, input.shape))
+    plt.title(f"Layer {h[3] + 1}", fontsize=8)
+    plt.axis("off")
+
+    # lower right
+    plt.subplot(3, 4, 9), plt.imshow(get_mean_attention_map(attn1, -1, input.shape))
+    plt.ylabel("Lower right corner", fontsize=8)
+    gc = plt.gca()
+    gc.axes.xaxis.set_ticklabels([])
+    gc.axes.yaxis.set_ticklabels([])
+    gc.axes.xaxis.set_ticks([])
+    gc.axes.yaxis.set_ticks([])
+
+    plt.subplot(3, 4, 10)
+    plt.imshow(get_mean_attention_map(attn2, -1, input.shape))
+    plt.axis("off")
+    plt.subplot(3, 4, 11)
+    plt.imshow(get_mean_attention_map(attn3, -1, input.shape)), plt.axis("off")
+    plt.subplot(3, 4, 12)
+    plt.imshow(get_mean_attention_map(attn4, -1, input.shape)), plt.axis("off")
+    plt.tight_layout()
+    plt.show()
