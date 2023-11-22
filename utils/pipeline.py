@@ -89,7 +89,7 @@ def get_data(
     labels = preprocessor.gedi.rh98
 
     # Get patches
-    patches = preprocessor.patches.sample(n=1000)
+    patches = preprocessor.patches
 
     # Get label distribution
     dist, _ = histogram(labels, bins)
