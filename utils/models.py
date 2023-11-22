@@ -119,10 +119,11 @@ def validate(
 
         writer.add_images("Plots/images", images, epoch, dataformats="NCHW")
 
-    # Add predictions to writer
-    preds = stack([apply_colormap(output) for output in outputs])
+    if epoch % 5 == 0:
+        # Add predictions to writer
+        preds = stack([apply_colormap(output) for output in outputs])
 
-    writer.add_images("Plots/predictions", preds, epoch, dataformats="NHWC")
+        writer.add_images("Plots/predictions", preds, epoch, dataformats="NHWC")
 
     logging.info(
         f"Validation epoch {epoch + 1}\n"
