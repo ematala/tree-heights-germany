@@ -165,8 +165,6 @@ data
 *.tif
 *.h5
 *.npz
-*.pt
-*.fth
 
 # logs
 logs
