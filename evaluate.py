@@ -2,18 +2,20 @@ import logging
 import os
 from argparse import ArgumentParser
 
+import torch
 from dotenv import load_dotenv
 from pandas import DataFrame
 
 from models import get_all_models, make_model
 from utils.loss import loss
-from utils.misc import get_device, seed_everyting
+from utils.misc import get_device, get_num_processes_to_spawn, seed_everyting
 from utils.models import test
 from utils.pipeline import get_data
 from utils.plots import (
     plot_predictions,
     plot_true_vs_predicted_histogram,
     plot_true_vs_predicted_scatter,
+    visualize_attention,
 )
 from utils.predictions import predict_batch
 
@@ -22,7 +24,7 @@ def main():
     args = get_evaluation_args()
     image_size = 256
     random_state = 42
-    num_workers = os.cpu_count() // 2
+    num_workers = get_num_processes_to_spawn()
     bins = list(range(0, 55, 5))
     device = get_device()
     config = vars(args)
@@ -39,6 +41,7 @@ def main():
     results_dir = config.get("results_dir")
     batch_size = config.get("batch_size")
     results_filename = config.get("filename")
+    visualize_attention_map = config.get("plot_attention")
 
     # Get data
     _, _, test_dl = get_data(
@@ -63,6 +66,10 @@ def main():
     # Test each model
     for model_name, model in models.items():
         logging.info(f"Testing model {model_name}")
+
+        if visualize_attention_map & model_name.startswith("vit"):
+            pass
+
         metrics = test(model, test_dl, loss, device, bins)
 
         results.loc[model_name] = [
@@ -155,6 +162,12 @@ def get_evaluation_args():
         type=str,
         default="evaluation.csv",
         help="Filename for the evaluation results [default: evaluation.csv]",
+    )
+    parser.add_argument(
+        "--plot_attention",
+        action="store_true",
+        default=False,
+        help="Plot attention maps for ViT models",
     )
     return parser.parse_args()
 

@@ -9,7 +9,12 @@ from torch.utils.tensorboard import SummaryWriter
 
 from models import get_all_models, make_model
 from utils.loss import loss
-from utils.misc import get_device, seed_everyting, send_telegram_message
+from utils.misc import (
+    get_device,
+    get_num_processes_to_spawn,
+    seed_everyting,
+    send_telegram_message,
+)
 from utils.models import test, train, validate
 from utils.pipeline import get_data
 from utils.stopping import EarlyStopping
@@ -19,7 +24,7 @@ def main():
     args = get_training_args()
     image_size = 256
     random_state = 42
-    num_workers = os.cpu_count() // 2
+    num_workers = get_num_processes_to_spawn()
     bins = list(range(0, 55, 5))
     device = get_device()
     config = vars(args)

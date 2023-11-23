@@ -1,5 +1,5 @@
 import os
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple, Union
 
 import rasterio
 from geopandas import GeoDataFrame, read_file, sjoin
@@ -311,14 +311,16 @@ def plot_true_vs_predicted_histogram(
 
 
 def compare_predictions(
-    img: str, models: Dict[str, str] = {}, path: Optional[str] = None
+    img: str,
+    predictions: Dict[str, Union[str, ndarray]] = {},
+    path: Optional[str] = None,
 ):
     with rasterio.open(img) as src:
         image = src.read([3, 2, 1])
         image = scale(image)
         image = brighten_image(image)
 
-        num_plots = 1 + len(models)
+        num_plots = 1 + len(predictions)
 
         _, axs = plt.subplots(1, num_plots, figsize=(5 * num_plots, 5))
 
@@ -327,9 +329,9 @@ def compare_predictions(
 
         show(image, ax=axs[0], title=img)
 
-        for i, (name, fp) in enumerate(models.items()):
-            pred = read_window(fp, src.meta, src.bounds)
-            show(pred, ax=axs[i + 1], title=f"Predictions from {name}", cmap="inferno")
+        for i, (name, p) in enumerate(predictions.items()):
+            pred = read_window(p, src.meta, src.bounds) if isinstance(p, str) else p
+            show(pred, ax=axs[i + 1], title=name, cmap="inferno")
 
         for ax in axs:
             ax.axis("off")

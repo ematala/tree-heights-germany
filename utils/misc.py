@@ -1,18 +1,11 @@
 import os
-from random import seed as pyseed
+import random
 from typing import List, Optional, Tuple
 
+import numpy as np
+import torch
 from dotenv import load_dotenv
-from numpy import histogram as nphist
-from numpy import ndarray
-from numpy.random import seed as npseed
 from requests import post
-from torch import device as Device
-from torch import manual_seed as tseed
-from torch.backends.mps import is_available as mps_available
-from torch.cuda import is_available as cuda_available
-from torch.cuda import manual_seed as cseed
-from torch.cuda import manual_seed_all as cseed_all
 
 
 def get_window_bounds(
@@ -32,39 +25,39 @@ def get_window_bounds(
 
 
 def get_label_bins(
-    label: ndarray,
+    label: np.ndarray,
     bins: List[int] = list(range(0, 55, 5)),
     no_data: float = 0,
-) -> ndarray:
-    count, _ = nphist(label[label != no_data], bins)
+) -> np.ndarray:
+    count, _ = np.histogram(label[label != no_data], bins)
     return count
 
 
 def seed_everyting(seed: int = 42):
-    pyseed(seed)
-    npseed(seed)
-    tseed(seed)
-    cseed(seed)
-    cseed_all(seed)
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
 
 
-def get_device(dev: Optional[str] = None) -> Device:
-    return Device(
+def get_device(dev: Optional[str] = None) -> torch.device:
+    return torch.device(
         dev
         if dev
         else "cuda"
-        if cuda_available()
+        if torch.cuda.is_available()
         else "mps"
-        if mps_available()
+        if torch.backends.mps.is_available()
         else "cpu"
     )
 
 
 def get_num_processes_to_spawn(
-    num_images: int,
+    num_samples: int = np.Inf,
     max_processes_per_core: int = 1,
 ) -> int:
-    return min((os.cpu_count() * max_processes_per_core) // 4, num_images)
+    return min((os.cpu_count() * max_processes_per_core) // 4, num_samples)
 
 
 def send_telegram_message(message: str):
