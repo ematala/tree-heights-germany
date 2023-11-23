@@ -12,7 +12,6 @@ from .encoder import make_encoder
 class Vit(BaseModel):
     def __init__(
         self,
-        backbone="vit_tiny_patch16_256",
         embed_dim=192,
         img_size=256,
         in_chans=5,
@@ -27,7 +26,6 @@ class Vit(BaseModel):
     ):
         super(Vit, self).__init__()
         self.encoder = make_encoder(
-            backbone=backbone,
             embed_dim=embed_dim,
             readout_op=readout_op,
             enable_attention_hooks=enable_attention_hooks,

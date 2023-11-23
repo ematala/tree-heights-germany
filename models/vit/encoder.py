@@ -16,44 +16,19 @@ from .hooks import get_activation, get_attention
 
 
 def make_encoder(
-    backbone: str,
     embed_dim: int,
     readout_op: str = "ignore",
     enable_attention_hooks: bool = False,
     **kwargs,
 ):
-    return {
-        "vit_tiny_patch16_256": VitEncoder(
-            model=timm.create_model(
-                "vit_tiny_patch16_224", embed_dim=embed_dim, **kwargs
-            ),
-            embed_dim=embed_dim,
-            feature_dims=make_feature_dims(embed_dim),
-            hooks=[2, 5, 8, 11],
-            readout_op=readout_op,
-            enable_attention_hooks=enable_attention_hooks,
-        ),
-        "vit_small_patch16_256": VitEncoder(
-            model=timm.create_model(
-                "vit_small_patch16_224", embed_dim=embed_dim, **kwargs
-            ),
-            embed_dim=embed_dim,
-            feature_dims=make_feature_dims(embed_dim),
-            hooks=[2, 5, 8, 11],
-            readout_op=readout_op,
-            enable_attention_hooks=enable_attention_hooks,
-        ),
-        "vit_base_patch16_256": VitEncoder(
-            model=timm.create_model(
-                "vit_base_patch16_224", embed_dim=embed_dim, **kwargs
-            ),
-            embed_dim=embed_dim,
-            feature_dims=make_feature_dims(embed_dim),
-            hooks=[2, 5, 8, 11],
-            readout_op=readout_op,
-            enable_attention_hooks=enable_attention_hooks,
-        ),
-    }[backbone]
+    return VitEncoder(
+        model=timm.create_model("vit_tiny_patch16_224", embed_dim=embed_dim, **kwargs),
+        embed_dim=embed_dim,
+        feature_dims=make_feature_dims(embed_dim),
+        hooks=[2, 5, 8, 11],
+        readout_op=readout_op,
+        enable_attention_hooks=enable_attention_hooks,
+    )
 
 
 class VitEncoder(nn.Module):
