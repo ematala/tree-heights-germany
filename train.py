@@ -3,6 +3,7 @@ import logging
 import os
 
 from dotenv import load_dotenv
+from torch.cuda.amp import GradScaler
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.tensorboard import SummaryWriter
@@ -73,6 +74,9 @@ def main():
     # Create optimizer
     optimizer = AdamW(model.parameters(), lr)
 
+    # Create scaler for mixed precision training
+    scaler = GradScaler() if config.get("use_mp") and device.type == "cuda" else None
+
     # Create teacher model
     teacher = None
 
@@ -105,6 +109,7 @@ def main():
             device,
             epoch,
             optimizer,
+            scaler,
             scheduler,
             writer,
             teacher,
@@ -231,6 +236,13 @@ def get_training_args():
         type=int,
         default=10,
         help="Patience for early stopping [default: 10]",
+    )
+
+    parser.add_argument(
+        "--use-mp",
+        action="store_true",
+        default=False,
+        help="Use mixed precision training",
     )
 
     return parser.parse_args()

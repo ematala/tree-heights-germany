@@ -5,15 +5,8 @@ from typing import Callable, List, Optional, Tuple
 import matplotlib.pyplot as plt
 import torch
 from numpy import ndarray
-from torch import (
-    Tensor,
-    cat,
-    from_numpy,
-    no_grad,
-    stack,
-    zeros,
-)
 from torch import device as Device
+from torch.cuda.amp import GradScaler, autocast
 from torch.nn import L1Loss, Module, MSELoss
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import _LRScheduler as LRScheduler
@@ -29,10 +22,11 @@ from .transforms import denormalize, scale
 def train(
     model: Module,
     loader: DataLoader,
-    criterion: Callable[[Tensor, Tensor], Tensor],
+    criterion: Callable[[torch.Tensor, torch.Tensor], torch.Tensor],
     device: Device,
     epoch: int,
     optimizer: Optimizer,
+    scaler: Optional[GradScaler] = None,
     scheduler: Optional[LRScheduler] = None,
     writer: Optional[SummaryWriter] = None,
     teacher: Optional[Module] = None,
@@ -40,24 +34,33 @@ def train(
 ) -> None:
     model.train()
 
+    use_amp = scaler is not None and device.type == "cuda"
+
     for batch, (inputs, targets) in enumerate(
         tqdm(loader, f"Training epoch {epoch + 1}")
     ):
         inputs, targets = inputs.to(device), targets.to(device)
 
-        outputs = model(inputs)
-
-        loss = criterion(*filter(outputs, targets))
-
-        if teacher:
-            with no_grad():
-                teacher_outputs = teacher(inputs)
-
-            loss = (1 - alpha) * loss + alpha * criterion(outputs, teacher_outputs)
-
-        loss.backward()
-        optimizer.step()
         optimizer.zero_grad()
+
+        with autocast(enabled=use_amp):
+            outputs = model(inputs)
+
+            loss = criterion(*filter(outputs, targets))
+
+            if teacher:
+                with torch.no_grad():
+                    teacher_outputs = teacher(inputs)
+
+                loss = (1 - alpha) * loss + alpha * criterion(outputs, teacher_outputs)
+
+        if use_amp:
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
+        else:
+            loss.backward()
+            optimizer.step()
 
         if scheduler:
             scheduler.step()
@@ -70,7 +73,7 @@ def train(
 def validate(
     model: Module,
     loader: DataLoader,
-    criterion: Callable[[Tensor, Tensor], Tensor],
+    criterion: Callable[[torch.Tensor, torch.Tensor], torch.Tensor],
     device: Device,
     epoch: int,
     writer: SummaryWriter,
@@ -88,7 +91,7 @@ def validate(
         "rmse": 0,
     }
 
-    with no_grad():
+    with torch.no_grad():
         for _, (inputs, targets) in enumerate(
             tqdm(loader, f"Validation epoch {epoch + 1}")
         ):
@@ -121,7 +124,7 @@ def validate(
 
     if epoch % 5 == 0:
         # Add predictions to writer
-        preds = stack([apply_colormap(output) for output in outputs])
+        preds = torch.stack([apply_colormap(output) for output in outputs])
 
         writer.add_images("Plots/predictions", preds, epoch, dataformats="NHWC")
 
@@ -138,7 +141,7 @@ def validate(
 def test(
     model: Module,
     loader: DataLoader,
-    criterion: Callable[[Tensor, Tensor], Tensor],
+    criterion: Callable[[torch.Tensor, torch.Tensor], torch.Tensor],
     device: Device,
     ranges: Optional[List[int]] = list(range(0, 55, 5)),
 ) -> Tuple[float, float, float, ndarray, ndarray, ndarray]:
@@ -151,7 +154,7 @@ def test(
         "total": 0,
         "mae": 0,
         "rmse": 0,
-        "loss_by_range": zeros(len(range_bins)).to(device),
+        "loss_by_range": torch.zeros(len(range_bins)).to(device),
     }
 
     predictions = {
@@ -163,7 +166,7 @@ def test(
     mae = L1Loss()
     mse = MSELoss()
 
-    with no_grad():
+    with torch.no_grad():
         for _, (inputs, targets) in enumerate(tqdm(loader, "Testing")):
             inputs, targets = inputs.to(device), targets.to(device)
 
@@ -190,13 +193,13 @@ def test(
 
     # Convert to numpy arrays
     for key in predictions.keys():
-        predictions[key] = cat(predictions.get(key)).cpu().numpy()
+        predictions[key] = torch.cat(predictions.get(key)).cpu().numpy()
 
     return dict(**metrics, **predictions)
 
 
-def apply_colormap(img: Tensor) -> Tensor:
+def apply_colormap(img: torch.Tensor) -> torch.Tensor:
     img_min, img_max = img.min().item(), img.max().item()
     img = (img.cpu() - img_min) / (img_max - img_min)
     cmap = plt.cm.viridis(img.numpy())[..., :3]
-    return from_numpy(cmap).float()
+    return torch.from_numpy(cmap).float()
