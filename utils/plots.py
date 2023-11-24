@@ -7,6 +7,7 @@ from matplotlib import pyplot as plt
 from numpy import arange, expand_dims, minimum, ndarray
 from rasterio.plot import show
 from torch import Tensor
+import torch
 
 from models.vit.hooks import get_mean_attention_map
 
@@ -339,7 +340,12 @@ def compare_predictions(
     save_or_show_plot(path)
 
 
-def visualize_attention(input, model, prediction, path: Optional[str] = None):
+def visualize_attention(
+    input: torch.Tensor,
+    model: torch.nn.Module,
+    prediction: torch.Tensor,
+    path: Optional[str] = None,
+):
     input = (input + 1.0) / 2.0
 
     attn1 = model.encoder.attention["1"]

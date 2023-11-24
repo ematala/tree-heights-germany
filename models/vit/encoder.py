@@ -52,13 +52,14 @@ class VitEncoder(nn.Module):
 
         self.activations = {}
         self.attention = {}
+        self.enable_attention_hooks = enable_attention_hooks
 
         for i, hook in enumerate(hooks):
             self.model.blocks[hook].register_forward_hook(
                 get_activation(str(i + 1), self.activations)
             )
 
-        if enable_attention_hooks:
+        if self.enable_attention_hooks:
             self.attention = {}
             for i, hook in enumerate(hooks):
                 self.model.blocks[hook].attn.register_forward_hook(
