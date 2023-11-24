@@ -23,6 +23,7 @@ from tqdm import tqdm
 
 from utils.dataset import ForestDataset
 from utils.misc import (
+    filter_gedi,
     get_label_bins,
     get_num_processes_to_spawn,
     send_telegram_message,
@@ -81,15 +82,7 @@ class Preprocessor:
     def _load_gedi(self):
         self.gedi = read_feather(self.gedi_file)
 
-        self.gedi = self.gedi[
-            (self.gedi.solar_elevation < 0)
-            & (self.gedi.quality_flag == 1)
-            & (self.gedi.num_detectedmodes > 0)
-            & (self.gedi.degrade_flag == 0)
-            & (self.gedi.stale_return_flag == 0)
-            & (self.gedi.rh98 >= 0)
-            & (self.gedi.rh98 <= 70)
-        ]
+        self.gedi = filter_gedi(self.gedi)
 
         self.gedi = GeoDataFrame(
             self.gedi.rh98,

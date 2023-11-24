@@ -3,6 +3,7 @@ import random
 from typing import List, Optional, Tuple
 
 import numpy as np
+import pandas as pd
 import torch
 from dotenv import load_dotenv
 from requests import post
@@ -72,3 +73,17 @@ def send_telegram_message(message: str):
         f"https://api.telegram.org/bot{token}/sendMessage",
         {"chat_id": chat_id, "text": message},
     )
+
+
+def filter_gedi(
+    gedi: pd.DataFrame,
+) -> pd.DataFrame:
+    return gedi[
+        (gedi.solar_elevation < 0)
+        & (gedi.quality_flag == 1)
+        & (gedi.num_detectedmodes > 0)
+        & (gedi.degrade_flag == 0)
+        & (gedi.stale_return_flag == 0)
+        & (gedi.rh98 >= 0)
+        & (gedi.rh98 <= 70)
+    ]
