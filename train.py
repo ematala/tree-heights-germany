@@ -242,7 +242,7 @@ def get_training_args():
     )
 
     parser.add_argument(
-        "--use-mp",
+        "--use_mp",
         action="store_true",
         default=False,
         help="Use mixed precision training",
