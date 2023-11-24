@@ -47,6 +47,7 @@ def main():
     model_name = config.get("model")
     teacher_name = config.get("teacher")
     use_mp = config.get("use_mp") and device.type == "cuda"
+    notify = config.get("notify")
 
     logging.info(
         f"Starting training...\n"
@@ -57,103 +58,110 @@ def main():
         f"Mixed precision training: {use_mp}\n"
     )
 
-    # Get data
-    train_dl, val_dl, test_dl = get_data(
-        img_dir,
-        patch_dir,
-        gedi_dir,
-        image_size,
-        batch_size,
-        num_workers,
-        bins,
-    )
-
-    # Create model and move to device
-    model = make_model(model_name).to(device)
-
-    # constant lr for all models
-    lr = 1e-4
-
-    # Create optimizer
-    optimizer = AdamW(model.parameters(), lr)
-
-    # Create scaler for mixed precision training
-    scaler = GradScaler() if use_mp else None
-
-    # Create teacher model
-    teacher = None
-
-    if teacher_name:
-        logging.info(f"Loading teacher model {teacher_name}")
-        teacher = (
-            make_model(teacher_name)
-            .load(os.path.join(weights_dir, f"{teacher_name}.pt"))
-            .to(device)
+    try:
+        # Get data
+        train_dl, val_dl, test_dl = get_data(
+            img_dir,
+            patch_dir,
+            gedi_dir,
+            image_size,
+            batch_size,
+            num_workers,
+            bins,
         )
 
-    # Create scheduler
-    scheduler = CosineAnnealingLR(optimizer, epochs)
+        # Create model and move to device
+        model = make_model(model_name).to(device)
 
-    # Create writer
-    writer = SummaryWriter(f"{log_dir}/{model_name}")
+        # constant lr for all models
+        lr = 1e-4
 
-    # Create early stopping
-    stopper = EarlyStopping(model, weights_dir, model_name, patience)
+        # Create optimizer
+        optimizer = AdamW(model.parameters(), lr)
 
-    # Initialize trained epochs
-    trained_epochs = 0
+        # Create scaler for mixed precision training
+        scaler = GradScaler() if use_mp else None
 
-    # Training loop
-    for epoch in range(epochs):
-        train(
-            model,
-            train_dl,
-            loss,
-            device,
-            epoch,
-            optimizer,
-            scaler,
-            scheduler,
-            writer,
-            teacher,
-            alpha,
+        # Create teacher model
+        teacher = None
+
+        if teacher_name:
+            logging.info(f"Loading teacher model {teacher_name}")
+            teacher = (
+                make_model(teacher_name)
+                .load(os.path.join(weights_dir, f"{teacher_name}.pt"))
+                .to(device)
+            )
+
+        # Create scheduler
+        scheduler = CosineAnnealingLR(optimizer, epochs)
+
+        # Create writer
+        writer = SummaryWriter(f"{log_dir}/{model_name}")
+
+        # Create early stopping
+        stopper = EarlyStopping(model, weights_dir, model_name, patience)
+
+        # Initialize trained epochs
+        trained_epochs = 0
+
+        # Training loop
+        for epoch in range(epochs):
+            train(
+                model,
+                train_dl,
+                loss,
+                device,
+                epoch,
+                optimizer,
+                scaler,
+                scheduler,
+                writer,
+                teacher,
+                alpha,
+            )
+            val_loss = validate(
+                model,
+                val_dl,
+                loss,
+                device,
+                epoch,
+                writer,
+            )
+            trained_epochs += 1
+            stopper(val_loss)
+            if stopper.stop:
+                logging.info(f"Early stopping at epoch {trained_epochs}")
+                break
+
+        # Close writer
+        writer.close()
+
+        logging.info("Training finished.")
+
+        # Test model
+        metrics = test(model, test_dl, loss, device, bins)
+
+        report = (
+            f"Finished training with {model_name} configuration for {epochs} epochs\n"
+            f"Early stopping triggered at epoch {trained_epochs}\n"
+            f"Final test loss: {metrics.get('total'):>8f}\n"
+            f"Final MAE loss: {metrics.get('mae'):>8f}\n"
+            f"Final RMSE loss: {metrics.get('rmse'):>8f}\n"
+            f"Ranges: {bins}\n"
+            f"Losses by range: {metrics.get('loss_by_range')}"
         )
-        val_loss = validate(
-            model,
-            val_dl,
-            loss,
-            device,
-            epoch,
-            writer,
-        )
-        trained_epochs += 1
-        stopper(val_loss)
-        if stopper.stop:
-            logging.info(f"Early stopping at epoch {trained_epochs}")
-            break
 
-    # Close writer
-    writer.close()
+        logging.info(report)
 
-    logging.info("Training finished.")
+        if notify:
+            send_telegram_message(report)
 
-    # Test model
-    metrics = test(model, test_dl, loss, device, bins)
-
-    report = (
-        f"Finished training with {model_name} configuration for {epochs} epochs\n"
-        f"Early stopping triggered at epoch {trained_epochs}\n"
-        f"Final test loss: {metrics.get('total'):>8f}\n"
-        f"Final MAE loss: {metrics.get('mae'):>8f}\n"
-        f"Final RMSE loss: {metrics.get('rmse'):>8f}\n"
-        f"Ranges: {bins}\n"
-        f"Losses by range: {metrics.get('loss_by_range')}"
-    )
-
-    logging.info(report)
-
-    if config.get("notify"):
-        send_telegram_message(report)
+    except Exception as e:
+        logging.error(e)
+        if notify:
+            send_telegram_message(f"Training failed: {e}")
+        raise e
 
 
 def get_training_args():
