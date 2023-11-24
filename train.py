@@ -73,6 +73,8 @@ def main():
         # Create model and move to device
         model = make_model(model_name).to(device)
 
+        model_name = f"{model_name}-{teacher_name}" if teacher_name else model_name
+
         # constant lr for all models
         lr = 1e-4
 
@@ -97,7 +99,7 @@ def main():
         scheduler = CosineAnnealingLR(optimizer, epochs)
 
         # Create writer
-        writer = SummaryWriter(f"{log_dir}/{model_name}")
+        writer = SummaryWriter(os.path.join(log_dir, model_name))
 
         # Create early stopping
         stopper = EarlyStopping(model, weights_dir, model_name, patience)
