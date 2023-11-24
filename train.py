@@ -46,12 +46,15 @@ def main():
     gedi_dir = config.get("gedi_dir")
     model_name = config.get("model")
     teacher_name = config.get("teacher")
+    use_mp = config.get("use_mp") and device.type == "cuda"
 
     logging.info(
         f"Starting training...\n"
         f"Configuration: {model_name}\n"
         f"Epochs: {epochs}\n"
         f"Device: {device}"
+        f"Batch size: {batch_size}\n"
+        f"Mix precision training: {use_mp}\n"
     )
 
     # Get data
@@ -75,7 +78,7 @@ def main():
     optimizer = AdamW(model.parameters(), lr)
 
     # Create scaler for mixed precision training
-    scaler = GradScaler() if config.get("use_mp") and device.type == "cuda" else None
+    scaler = GradScaler() if use_mp else None
 
     # Create teacher model
     teacher = None
