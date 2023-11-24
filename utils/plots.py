@@ -1,13 +1,15 @@
 import os
 from typing import Dict, Optional, Tuple, Union
 
+import numpy as np
+import pandas as pd
 import rasterio
+import torch
 from geopandas import GeoDataFrame, read_file, sjoin
 from matplotlib import pyplot as plt
 from numpy import arange, expand_dims, minimum, ndarray
 from rasterio.plot import show
 from torch import Tensor
-import torch
 
 from models.vit.hooks import get_mean_attention_map
 
@@ -405,5 +407,32 @@ def visualize_attention(
     plt.subplot(3, 4, 12)
     plt.imshow(get_mean_attention_map(attn4, -1, input.shape)), plt.axis("off")
     plt.tight_layout()
+
+    save_or_show_plot(path)
+
+
+def plot_gedi_distribution(
+    labels: pd.Series,
+    bins=range(0, 55, 5),
+    path: Optional[str] = None,
+):
+    hist, _ = np.histogram(labels, bins=bins)
+    percentages = (hist / hist.sum()) * 100
+    labels = [
+        f"{int(bins[i])}-{int(bins[i+1])}m ({percent:.1f}%)"
+        for i, percent in enumerate(percentages)
+    ]
+    labels[-1] = f">{int(bins[-1])}m ({percentages[-1]:.1f}%)"
+
+    _, ax = plt.subplots()
+
+    ax.pie(hist, startangle=140, colors=plt.cm.tab20.colors)
+    ax.axis("equal")
+    ax.legend(
+        labels,
+        title="GEDI RH98 distribution",
+        loc="upper left",
+        bbox_to_anchor=(-0.3, 1),
+    )
 
     save_or_show_plot(path)
