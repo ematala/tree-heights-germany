@@ -54,7 +54,7 @@ def main():
         f"Epochs: {epochs}\n"
         f"Device: {device}\n"
         f"Batch size: {batch_size}\n"
-        f"Mix precision training: {use_mp}\n"
+        f"Mixed precision training: {use_mp}\n"
     )
 
     # Get data
@@ -244,8 +244,15 @@ def get_training_args():
     parser.add_argument(
         "--use_mp",
         action="store_true",
-        default=False,
+        default=True,
         help="Use mixed precision training",
+    )
+
+    parser.add_argument(
+        "--no_use_mp",
+        action="store_false",
+        dest="use_mp",
+        help="Do not use mixed precision training",
     )
 
     return parser.parse_args()
