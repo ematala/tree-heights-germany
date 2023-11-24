@@ -62,12 +62,12 @@ def train(
             loss.backward()
             optimizer.step()
 
-        if scheduler:
-            scheduler.step()
-
         if batch % 10 == 0 and writer:
             step = epoch * len(loader) + batch
             writer.add_scalar("Loss/train/total", loss.item(), step)
+
+    if scheduler:
+        scheduler.step()
 
 
 def validate(

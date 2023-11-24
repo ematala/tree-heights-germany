@@ -52,7 +52,7 @@ def main():
         f"Starting training...\n"
         f"Configuration: {model_name}\n"
         f"Epochs: {epochs}\n"
-        f"Device: {device}"
+        f"Device: {device}\n"
         f"Batch size: {batch_size}\n"
         f"Mix precision training: {use_mp}\n"
     )
