@@ -81,6 +81,7 @@ def get_data(
     val_size: float = 0.15,
     test_size: float = 0.15,
     random_state: int = 42,
+    frac: float = 1,
 ) -> Tuple[DataLoader, DataLoader, DataLoader]:
     # Create preprocessor
     preprocessor = Preprocessor(img_dir, patch_dir, gedi_dir, image_size, bins=bins)
@@ -92,7 +93,7 @@ def get_data(
     labels = preprocessor.gedi.rh98
 
     # Get patches
-    patches = preprocessor.patches
+    patches = preprocessor.patches.sample(frac=frac, random_state=random_state)
 
     # Get label distribution
     dist, _ = np.histogram(labels, bins)
