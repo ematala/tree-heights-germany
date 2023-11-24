@@ -1,6 +1,6 @@
 from typing import List, Tuple
 
-from numpy import array, dot, histogram, minimum, ndarray, percentile, stack
+import numpy as np
 from pandas import DataFrame, Series
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, Dataset, WeightedRandomSampler
@@ -12,11 +12,11 @@ from .dataset import ForestDataset
 
 def get_normalized_sampling_weights(
     bins: Series,
-    probs: ndarray,
-) -> ndarray:
-    bins = stack(bins.apply(array))
+    probs: np.ndarray,
+) -> np.ndarray:
+    bins = np.stack(bins.apply(np.array))
 
-    weights = dot(bins, probs)
+    weights = np.dot(bins, probs)
 
     weights /= weights.sum()
 
@@ -25,9 +25,9 @@ def get_normalized_sampling_weights(
 
 def get_splits(
     patches: DataFrame,
-    val_size: float = 0.15,
-    test_size: float = 0.15,
-    random_state: int = 42,
+    val_size: float,
+    test_size: float,
+    random_state: int,
 ) -> Tuple[DataFrame, DataFrame, DataFrame]:
     train_df, rest = train_test_split(
         patches, test_size=val_size + test_size, random_state=random_state
@@ -57,7 +57,7 @@ def get_dataloaders(
     train_ds: Dataset,
     valid_ds: Dataset,
     test_ds: Dataset,
-    sampling_weights: ndarray,
+    sampling_weights: np.ndarray,
     batch_size: int,
     num_workers,
 ) -> Tuple[DataLoader, DataLoader, DataLoader]:
@@ -78,6 +78,9 @@ def get_data(
     batch_size: int = 1,
     num_workers: int = 0,
     bins: List[int] = list(range(0, 55, 5)),
+    val_size: float = 0.15,
+    test_size: float = 0.15,
+    random_state: int = 42,
 ) -> Tuple[DataLoader, DataLoader, DataLoader]:
     # Create preprocessor
     preprocessor = Preprocessor(img_dir, patch_dir, gedi_dir, image_size, bins=bins)
@@ -92,17 +95,17 @@ def get_data(
     patches = preprocessor.patches
 
     # Get label distribution
-    dist, _ = histogram(labels, bins)
+    dist, _ = np.histogram(labels, bins)
 
     # Compute inverse probability weights
     probs = 1 / (dist + 1e-5)
 
     # Clip weights to avoid focussing on outliers
-    max_weight = percentile(probs, 95)
-    probs = minimum(probs, max_weight)
+    max_weight = np.percentile(probs, 95)
+    probs = np.minimum(probs, max_weight)
 
     # Create splits
-    train_df, val_df, test_df = get_splits(patches)
+    train_df, val_df, test_df = get_splits(patches, val_size, test_size, random_state)
 
     # Calculate weight for each patch of the training set
     weights = get_normalized_sampling_weights(train_df.bins, probs)
