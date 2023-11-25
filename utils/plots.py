@@ -134,7 +134,7 @@ def plot_predictions(
     images: Tensor,
     predictions: dict,
     path: Optional[str] = None,
-    nrows: int = 4,
+    nrows: int = 3,
 ) -> None:
     """Plot predictions for a set of images.
 
