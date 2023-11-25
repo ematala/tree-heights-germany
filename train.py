@@ -247,8 +247,8 @@ def get_training_args():
     parser.add_argument(
         "--patience",
         type=int,
-        default=10,
-        help="Patience for early stopping [default: 10]",
+        default=5,
+        help="Patience for early stopping [default: 5]",
     )
 
     parser.add_argument(
