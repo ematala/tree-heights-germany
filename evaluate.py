@@ -67,10 +67,10 @@ def main():
     for model_name, model in models.items():
         logging.info(f"Testing model {model_name}")
 
+        metrics = test(model, test_dl, loss, device, bins)
+
         if visualize_attention_map & model_name.startswith("vit"):
             pass
-
-        metrics = test(model, test_dl, loss, device, bins)
 
         results.loc[model_name] = [
             metrics.get("total"),
@@ -154,8 +154,8 @@ def get_evaluation_args():
     parser.add_argument(
         "--batch_size",
         type=int,
-        default=64,
-        help="Batch size [default: 64]",
+        default=256,
+        help="Batch size [default: 256]",
     )
     parser.add_argument(
         "--filename",

@@ -7,7 +7,6 @@ import rasterio
 import torch
 from geopandas import GeoDataFrame, read_file, sjoin
 from matplotlib import pyplot as plt
-from numpy import arange, expand_dims, minimum, ndarray
 from rasterio.plot import show
 from torch import Tensor
 
@@ -34,13 +33,13 @@ def save_or_show_plot(path: Optional[str] = None) -> None:
     plt.savefig(path, **CONFIG) if path else plt.show()
 
 
-def brighten_image(image: ndarray, factor: float = 5.0) -> ndarray:
-    return minimum(image * factor, 1)
+def brighten_image(image: np.ndarray, factor: float = 5.0) -> np.ndarray:
+    return np.minimum(image * factor, 1)
 
 
 def plot_image_and_prediction(
-    image: ndarray,
-    prediction: ndarray,
+    image: np.ndarray,
+    prediction: np.ndarray,
     path: Optional[str] = None,
 ):
     """Plots the original image and the prediction side by side.
@@ -169,7 +168,7 @@ def plot_predictions(
     fig.subplots_adjust(right=0.85, wspace=0.1, hspace=0.1)
 
     if nrows == 1:
-        axes = expand_dims(axes, axis=0)
+        axes = np.expand_dims(axes, axis=0)
 
     for i in range(nrows):
         image = denormalize(images[i])
@@ -201,8 +200,8 @@ def plot_predictions(
 
 
 def plot_true_vs_predicted_scatter(
-    true_values: ndarray,
-    predicted_values: ndarray,
+    true_values: np.ndarray,
+    predicted_values: np.ndarray,
     model_name: str,
     path: Optional[str] = None,
     bounds: Optional[Tuple[int, int]] = (0, 50),
@@ -224,7 +223,7 @@ def plot_true_vs_predicted_scatter(
     plt.figure(figsize=(9, 9))
 
     # Only plot values within the bounds
-    lower, upper = bounds
+    lower, upper = bounds if bounds else (true_values.min(), true_values.max())
     mask = (true_values >= lower) & (true_values < upper)
     true_values, predicted_values = true_values[mask], predicted_values[mask]
 
@@ -240,16 +239,19 @@ def plot_true_vs_predicted_scatter(
     plt.xlabel("GEDI RH98 (m)", fontsize=14)
     plt.ylabel(f"{model_name} RH98 (m)", fontsize=14)
 
-    ticks = arange(0, 55, 5)
+    ticks = np.arange(lower, upper + 5, 5)
     plt.xticks(ticks)
     plt.yticks(ticks)
+
+    plt.xlim(lower, upper)
+    plt.ylim(lower, upper)
 
     save_or_show_plot(path)
 
 
 def plot_true_vs_predicted_histogram(
-    true_labels: ndarray,
-    predicted_values: ndarray,
+    true_labels: np.ndarray,
+    predicted_values: np.ndarray,
     model_name: str,
     path: Optional[str] = None,
     bins=range(50),
@@ -317,7 +319,7 @@ def plot_true_vs_predicted_histogram(
 
 def compare_predictions(
     img: str,
-    predictions: Dict[str, Union[str, ndarray]] = {},
+    predictions: Dict[str, Union[str, np.ndarray]] = {},
     path: Optional[str] = None,
 ):
     with rasterio.open(img) as src:
