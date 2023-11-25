@@ -221,14 +221,16 @@ def plot_true_vs_predicted_scatter(
     if true_values.shape != predicted_values.shape:
         raise ValueError("The shapes of true_values and predicted_values must match.")
 
-    plt.figure(figsize=(10, 10))
+    plt.figure(figsize=(9, 9))
 
     # Only plot values within the bounds
     lower, upper = bounds
     mask = (true_values >= lower) & (true_values < upper)
     true_values, predicted_values = true_values[mask], predicted_values[mask]
 
-    plt.scatter(true_values, predicted_values, marker="o", alpha=0.6)
+    plt.scatter(
+        true_values, predicted_values, marker="o", alpha=0.4, color="black", s=2
+    )
 
     # 1:1 line for perfect predictions
     min_val = min(true_values.min(), predicted_values.min())
