@@ -34,7 +34,7 @@ def predict_and_save_image(
 
     pred[pred < threshold] = 0
 
-    save_prediction(pred, input_path, output_path, threshold)
+    save_prediction(pred, input_path, output_path)
 
 
 def main():
