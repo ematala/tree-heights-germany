@@ -12,16 +12,13 @@ def save_prediction(
     pred: np.ndarray,
     input_file: str,
     output_file: str,
-    threshold: float = 5,
 ):
     with rasterio.open(input_file) as src:
         meta = src.meta.copy()
 
-    meta.update({"count": 1, "dtype": "uint16", "nodata": 0, "compress": "LZW"})
+    meta.update({"count": 1, "dtype": "uint8", "nodata": 0, "compress": "LZW"})
 
-    pred[pred < threshold] = 0
-
-    pred = (pred / pred.max() * 65535).astype(np.uint16)
+    pred = np.clip(pred * 255 / pred.max(), 0, 255).astype(np.uint8)
 
     with rasterio.open(output_file, "w", **meta) as dst:
         dst.write(pred, 1)

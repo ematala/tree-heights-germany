@@ -19,7 +19,7 @@ def predict_and_save_image(
     weights_dir: str,
     input_dir: str,
     output_dir: str,
-    threshold: float = 5,
+    threshold: float = 8,
     patch_size: int = 256,
 ):
     device = get_device()
@@ -31,6 +31,9 @@ def predict_and_save_image(
     model = make_model(model).load(weights_path).to(device)
 
     _, pred = predict_image(input_path, model, device, patch_size)
+
+    pred[pred < threshold] = 0
+
     save_prediction(pred, input_path, output_path, threshold)
 
 
@@ -107,8 +110,8 @@ def get_inference_args():
     parser.add_argument(
         "--threshold",
         type=float,
-        default=5,
-        help="Threshold for the predictions [default: 5]",
+        default=8,
+        help="Threshold for the predictions [default: 8]",
     )
 
     return parser.parse_args()
