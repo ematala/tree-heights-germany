@@ -42,7 +42,16 @@ def main():
     )
 
     regexp = r"L15\-\d{4}E\-\d{4}N\.tif"
-    images = [f for f in os.listdir(args.input_dir) if re.match(regexp, f)]
+    images = [
+        image
+        for image in os.listdir(args.input_dir)
+        if re.match(regexp, image)
+        and not os.path.exists(os.path.join(args.output_dir, image))
+    ]
+
+    if not images:
+        print("No images to predict.")
+        return
 
     fn = partial(predict_and_save_image, **vars(args))
     num_processes = get_num_processes_to_spawn(len(images))
